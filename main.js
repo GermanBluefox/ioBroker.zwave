@@ -219,8 +219,10 @@ var adapter = utils.adapter({
                                         // Todo: Not working
                                         adapter.log.debug("setConfigParam for " + id + ", paramId = " + paramId + ", paramValue = " + paramValue);
                                         zwave.setValue({
-                                            nodeid:   parseInt(obj.native.nodeid),
-                                            class_id: parseInt(obj.native.comclass),
+                                            //nodeid:   parseInt(obj.native.nodeid),
+                                            nodeid:   parseInt(obj.native.node_id),
+                                            //class_id: parseInt(obj.native.comclass),
+                                            class_id: parseInt(obj.native.class_id),
                                             instance: parseInt(obj.native.instance),
                                             index:    parseInt(obj.native.index)
                                         }, paramValue);
@@ -256,10 +258,13 @@ var adapter = utils.adapter({
                                 }
 
                                 if (state.ack == false) { // Passiert nur innerhalb von ioBroker, sonst ist ack true
-                                    adapter.log.error('setState for: nodeid='+obj.native.nodeid+': comclass='+obj.native.comclass+': index='+obj.native.index+': instance='+obj.native.instance+': value='+state.val);
+                                    //adapter.log.error('setState for: nodeid='+obj.native.node_id+': comclass='+obj.native.comclass+': index='+obj.native.index+': instance='+obj.native.instance+': value='+state.val);
+                                    adapter.log.error('setState for: nodeid='+obj.native.node_id+': comclass='+obj.native.class_id+': index='+obj.native.index+': instance='+obj.native.instance+': value='+state.val);
                                     zwave.setValue({
-                                        nodeid:   parseInt(obj.native.nodeid),
-                                        class_id: parseInt(obj.native.comclass),
+                                        //nodeid:   parseInt(obj.native.nodeid),
+                                        nodeid:   parseInt(obj.native.node_id),
+                                        //class_id: parseInt(obj.native.comclass),
+                                        class_id: parseInt(obj.native.class_id),
                                         instance: parseInt(obj.native.instance),
                                         index:    parseInt(obj.native.index)
                                     }, state.val);
