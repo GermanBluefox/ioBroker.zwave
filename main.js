@@ -66,7 +66,7 @@ var adapter = utils.adapter({
                 for (var i = 0; i < res.length; i++) {
                     var id = res[i].doc.common.name;
 
-                    adapter.log.debug('Remove ' + id + ': ' + id);
+                    adapter.log.warn('Remove ' + id + ': ' + id);
 
                     adapter.delObject(id, function (res, err) {
                         if (res != undefined && res != "Not exists") adapter.log.error("res from delObject: " + res);
@@ -99,7 +99,7 @@ var adapter = utils.adapter({
         adapter.log.debug("objectChange for " + id + " found, obj = " + JSON.stringify(obj));
     },
     stateChange: function (id, state) {
-        adapter.log.debug("stateChange for " + id + " found state = " + JSON.stringify(state));
+        adapter.log.info("stateChange for " + id + " found state = " + JSON.stringify(state));
 
         adapter.objects.getObject(id, function (err, res) {
             var obj = res;
@@ -560,7 +560,7 @@ function extendObject(nodeid, comclass, value, action) {
     if (value != null) {
         adapter.log.debug("-----------> NODE: " + nodeid + "-----" + comclass + "-----" + JSON.stringify(value));
         oname = calcName(nodeid, comclass, value.label, value.genre=="user" ? value.instance : undefined);
-        adapter.log.error('##### Value added: ' + oname + ' = ' + value.value + " index = " + value.index + " comclass = " + comclass + " instance = " + value.instance);
+        adapter.log.debug('##### Value added: ' + oname + ' = ' + value.value + " index = " + value.index + " comclass = " + comclass + " instance = " + value.instance);
 
         // Only if "value added"
         if (nodes[nodeid].classes[comclass] != undefined) {

@@ -2,3 +2,5 @@
 node_modules
 config
 www/_socket
+.idea
+open-zwave-master
