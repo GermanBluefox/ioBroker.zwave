@@ -106,6 +106,13 @@ Following global Actions are current supported:<br>
 - Danfoss Z Thermostat 014G0013
 
 ## Changelog
+### 0.2.7 (2016-01-22)
+ - (husky-koglhof) changed loglevel from debug to info
+   changed Type sensor to Type value
+   
+### 0.2.6 (2016-01-18)
+ - (husky-koglhof) Apply class_id and node_id Changes
+ 
 ### 0.2.5 (2015-12-21)
  - (husky-koglhof) Objecttree build now on change/added/ready from zwave
  - Default Role/Type/State (needed for history)

@@ -99,7 +99,7 @@ var adapter = utils.adapter({
         adapter.log.debug("objectChange for " + id + " found, obj = " + JSON.stringify(obj));
     },
     stateChange: function (id, state) {
-        adapter.log.info("stateChange for " + id + " found state = " + JSON.stringify(state));
+        adapter.log.debug("stateChange for " + id + " found state = " + JSON.stringify(state));
 
         adapter.objects.getObject(id, function (err, res) {
             var obj = res;
@@ -430,11 +430,11 @@ var comclasses = {
     0x27:{name: 'SWITCH_ALL',                             role: 'switch', children: {
         'Switch All': {role: 'switch', type: 'boolean'}
     }},
-    0x30:{name: 'SENSOR_BINARY',                          role: 'sensor', children: {
+    0x30:{name: 'SENSOR_BINARY',                          role: 'value', children: {
         'Sensor:': {type: 'number'},
     }},
-    0x31:{name: 'SENSOR_MULTILEVEL',                      role: 'sensor', children: {
-        Temperature: {role: 'sensor.temperature'}
+    0x31:{name: 'SENSOR_MULTILEVEL',                      role: 'value', children: {
+        Temperature: {role: 'value.temperature'}
     }},
     0x9c:{name: 'SENSOR_ALARM',                           role: 'alarm'},
     0x71:{name: 'ALARM',                                  role: 'alarm', children: {
@@ -470,13 +470,14 @@ var comclasses = {
     0x76:{name: 'LOCK',                                   role: ''},
     0x91:{name: 'MANUFACTURER_PROPRIETARY',               role: ''},
     0x35:{name: 'METER_PULSE',                            role: ''},
-    0x31:{name: 'SENSOR_MULTILEVEL',                      role: 'sensor', children: {
-        Power: {role: 'sensor.meter', type: 'number'},
-        Temperature: {role: 'sensor.temperature', type: 'number'}
+    0x31:{name: 'SENSOR_MULTILEVEL',                      role: 'value', children: {
+        Power: {role: 'value.power', type: 'number'},
+        Temperature: {role: 'value.temperature', type: 'number'},
+        Luminance: {role: 'value.brightness', type: 'number'}
     }},
-    0x32:{name: 'METER',                                  role: 'sensor', children: {
-        Energy: {role: 'sensor.meter', type: 'number'},
-        Power: {role: 'sensor.meter', type: 'number'},
+    0x32:{name: 'METER',                                  role: 'value', children: {
+        Energy: {role: 'value.power', type: 'number'},
+        Power: {role: 'value.power', type: 'number'},
         Exporting: {type: 'boolean'},
         Reset: {type: 'boolean'}
     }},
@@ -605,11 +606,11 @@ function extendObject(nodeid, comclass, value, action) {
             if (obj !== undefined && obj !== null) {
                 var d = diff(obj, chObj);
                 if (d !== undefined) {
-                    adapter.log.debug("---------> DIFFERENT OBJECT " + chName);
+                    adapter.log.error("---------> DIFFERENT OBJECT " + chName);
                     adapter.extendObject(chName, chObj);
                 }
             } else {
-                adapter.log.debug("---------> NEW CHANNEL OBJECT " + chName);
+                adapter.log.error("---------> NEW CHANNEL OBJECT " + chName);
                 adapter.extendObject(chName, chObj);
             }
 
@@ -665,7 +666,7 @@ function extendObject(nodeid, comclass, value, action) {
                         if (o.kind === "E" && o.path[0] === 'native' && o.path[1] === 'value') {
                             adapter.log.debug("############ setState for " + oname + " (" + index + ")");
                             adapter.states.setState(oname, {val: obj.native.value, ack: true});
-                        } else if (o.kind === "D" && o.path[0] === 'common' && o.path[1] === 'history') {
+                        } else if (o.kind === "D" && (o.path[0] === 'common' && o.path[1] === 'history') || o.path[0] == "acl") {
                             adapter.log.debug("Nothing todo for " + oname);
                         } else {
                             changed = true;
@@ -674,12 +675,12 @@ function extendObject(nodeid, comclass, value, action) {
                 }
             } else {
                 // NEW OBJECT
-                adapter.log.debug("---------> CREATE NEW OBJECT " + oname);
+                adapter.log.error("---------> CREATE NEW OBJECT " + oname);
                 adapter.extendObject(oname, stateObj);
             }
 
             if (changed === true) {
-                adapter.log.debug("---------> CHANGED OBJECT " + oname);
+                adapter.log.error("---------> CHANGED OBJECT " + oname);
                 adapter.extendObject(oname, stateObj);
             }
         }
@@ -711,22 +712,24 @@ function extendObject(nodeid, comclass, value, action) {
                 // Check each Object in Array
                 for (var index = d.length - 1; index >= 0; --index) {
                     var o = d[index];
-                    if (o.kind === "E" && o.path[0] === 'native' && o.path[1] === 'value') {
+                    if (o.kind === "E" && o.path[0] === 'native' && (o.path[1] === 'value' || o.path[4] === 'value') ) {
                         adapter.states.setState(devName, {val: obj.native.value, ack: true});
                     } else if (o.kind === "D" && o.path[0] === 'common' && o.path[1] === 'history') {
                         adapter.log.debug("Nothing todo for " + devName);
+                    } else if (o.kind = "E" && o.path[0] === 'native' && o.path[1] === "manufacturer" && o.rhs == "") {
+                        adapter.log.error("Manufacturer Changed, nothing todo");
                     } else {
                         c = true;
                     }
                 }
                 if (c === true) {
-                    adapter.log.debug("---------> DIFFERENT OBJECT " + devName);
+                    adapter.log.error("---------> DIFFERENT OBJECT " + devName);
                     adapter.extendObject(devName, devObj);
                 }
 
             }
         } else {
-            adapter.log.debug("---------> NEW CHANNEL OBJECT " + devName);
+            adapter.log.error("---------> NEW CHANNEL OBJECT " + devName);
             adapter.extendObject(devName, devObj);
         }
     }
@@ -900,7 +903,7 @@ function main() {
     });
 
     zwave.on('controller command', function(nodeId, ctrlState, ctrlError, helpmsg) {
-        adapter.log.info('controller command feedback: state:'+ctrlStat[ctrlState]+' #### error:'+ctrlErr[ctrlError]+' #### helpmsg:' + helpmsg + ' #### currently not implemented');
+        adapter.log.debug('controller command feedback: state:'+ctrlStat[ctrlState]+' #### error:'+ctrlErr[ctrlError]+' #### helpmsg:' + helpmsg + ' #### currently not implemented');
     });
 
     zwave.on('node naming', function (nodeid, nodeinfo) {
