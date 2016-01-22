@@ -105,7 +105,7 @@ Following global Actions are current supported:<br>
 - Danfoss Living Connect Room Thermostat (type 0003, id 8010)
 - Danfoss Z Thermostat 014G0013
 
-## Changelog
+## Changelog 
 ### 0.2.7 (2016-01-22)
  - (husky-koglhof) changed loglevel from debug to info
    changed Type sensor to Type value
