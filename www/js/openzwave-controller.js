@@ -228,174 +228,174 @@ var comclasses = {
 };
 
 ;(function ($) {
-$(document).ready(function () {
+    $(document).ready(function () {
 
-    var language = 'de';
+        var language = 'de';
 
-    var listDevices;
-    var indexDevices;
-    var names = {};
-    var hash;
+        var listDevices;
+        var indexDevices;
+        var names = {};
+        var hash;
 
-    var $body =                         $('body');
-    var $gridDevices =                  $('#grid-devices');
-    var $subgrid =                      $('#subgrid');
-    var $tabsMain =                     $('#tabs-main');
-    var $dialogHelp =                   $('#dialog-help');
+        var $body =                         $('body');
+        var $gridDevices =                  $('#grid-devices');
+        var $subgrid =                      $('#subgrid');
+        var $tabsMain =                     $('#tabs-main');
+        var $dialogHelp =                   $('#dialog-help');
 
-    var $dialogSetLocation =            $('#dialog-setlocation');
-    var $dialogSetName =                $('#dialog-setname');
-    var $dialogparamsetValues =         $('#dialog-paramsetValues');
+        var $dialogSetLocation =            $('#dialog-setlocation');
+        var $dialogSetName =                $('#dialog-setname');
+        var $dialogparamsetValues =         $('#dialog-paramsetValues');
         var $dialogAddCountdown =           $('#dialog-add-countdown');
 
-    servConn.init(null, {
-        onConnChange: function (isConnected) {
-            console.log("onConnChange isConnected=" + isConnected);
-            getConfig();
-            getDevices();
-        }
-    });
-
-    // i18n
-    function _(word) {
-        if (translation[word]) {
-            if (translation[word][language]) {
-                return translation[word][language];
+        servConn.init(null, {
+            onConnChange: function (isConnected) {
+                console.log("onConnChange isConnected=" + isConnected);
+                getConfig();
+                getDevices();
             }
-        }
-        if (!missesTranslation[word]) {
-            console.log('missing translation for "' + word + '"');
-            missesTranslation[word] = {de: word, en: word};
-        }
-
-        return word;
-    }
-    function translate() {
-        $('.translate').each(function () {
-            var $this = $(this);
-            $this.html(_($this.html()));
         });
-        $('.translateT').each(function () {
-            var $this = $(this);
-            $this.attr('title', _($this.attr('title')));
-        });
-    }
 
-    function getConfig() {
-        //servConn._socket.emit('getConfig', function (data) {
-        servConn._socket.emit('getObject', 'system.adapter.zwave', function (err, obj) {
-            $('.version').html(obj.common.installedVersion);
-
-            servConn._socket.emit('getObject', "system.config", function (err, config) {
-                language = config.language || 'de';
-                translate();
-
-                initTabs();
-                initDialogsMisc();
-                initGridDevices();
-                var tmp = window.location.hash.slice(1).split('/');
-                hash = tmp[1];
-
-                var count = 0;
-
-                if (tmp[2]) {
-                    var index = $('#tabs-main a[href="#' + tmp[2] + '"]').parent().index();
-                    $tabsMain.tabs("option", "active", index - 2);
+        // i18n
+        function _(word) {
+            if (translation[word]) {
+                if (translation[word][language]) {
+                    return translation[word][language];
                 }
+            }
+            if (!missesTranslation[word]) {
+                console.log('missing translation for "' + word + '"');
+                missesTranslation[word] = {de: word, en: word};
+            }
 
-                // at this point everything should be initialized
-                $('#loader').hide('fade');
+            return word;
+        }
+        function translate() {
+            $('.translate').each(function () {
+                var $this = $(this);
+                $this.html(_($this.html()));
             });
-        });
-    }
+            $('.translateT').each(function () {
+                var $this = $(this);
+                $this.attr('title', _($this.attr('title')));
+            });
+        }
 
-    function initTabs() {
-        $tabsMain.tabs({
+        function getConfig() {
+            //servConn._socket.emit('getConfig', function (data) {
+            servConn._socket.emit('getObject', 'system.adapter.zwave', function (err, obj) {
+                $('.version').html(obj.common.installedVersion);
 
-            activate: function(event ,ui){
-                resizeGrids();
-                var tab = ui.newTab[0].children[0].hash.slice(1);
-                if (hash) window.location.hash = '/' + hash + '/' + tab;
-            },
-            create: function () {
-                $('#tabs-main ul.ui-tabs-nav').prepend('<li class="header">OpenZWave Configurator</li>');
+                servConn._socket.emit('getObject', "system.config", function (err, config) {
+                    language = config.language || 'de';
+                    translate();
 
-                $(".ui-tabs-nav").
-                    append("<button title='Help' class='menu-button translateT' id='button-help'></button>");
-                $('#button-help').button({
-                    text: false,
-                    icons: {
-                        primary: 'ui-icon-help'
+                    initTabs();
+                    initDialogsMisc();
+                    initGridDevices();
+                    var tmp = window.location.hash.slice(1).split('/');
+                    hash = tmp[1];
+
+                    var count = 0;
+
+                    if (tmp[2]) {
+                        var index = $('#tabs-main a[href="#' + tmp[2] + '"]').parent().index();
+                        $tabsMain.tabs("option", "active", index - 2);
                     }
-                }).click(function () {
-                    $dialogHelp.dialog('open');
+
+                    // at this point everything should be initialized
+                    $('#loader').hide('fade');
                 });
-            }
-        });
-    }
+            });
+        }
 
-    function initDialogsMisc() {
-        $dialogHelp.dialog({
-            autoOpen: false,
-            modal: true,
-            width: 640,
-            height: 400
-        });
-    }
+        function initTabs() {
+            $tabsMain.tabs({
 
-    var states = {};
-    var objects = {};
-    var enums = [];
-    var metadata = {};
+                activate: function(event ,ui){
+                    resizeGrids();
+                    var tab = ui.newTab[0].children[0].hash.slice(1);
+                    if (hash) window.location.hash = '/' + hash + '/' + tab;
+                },
+                create: function () {
+                    $('#tabs-main ul.ui-tabs-nav').prepend('<li class="header">OpenZWave Configurator</li>');
 
-    function getData(callback) {
-        $('#load_grid-devices').show();
-
-        var objectsReady;
-        var statesReady;
-
-        console.log('requesting all states');
-        servConn.getStates('*', function (err, res) {
-            $('#load_grid-devices').hide();
-            states = res;
-            statesReady = true;
-            console.log('received all states');
-            if (objectsReady && typeof callback === 'function') callback();
-        });
-
-        console.log('requesting all objects');
-
-        servConn.getObjects(function (err, res) {
-            $('#load_grid-devices').hide();
-            metadata = {};
-            objects = {};
-            enums = [];
-            for (var object in res) {
-                var obj = res[object];
-                if (obj._id.search("zwave") == 0) {
-                    if (obj.type == "device") {
-                        objects[obj._id] = obj;
-                    } else {
-                        metadata[obj._id] = obj;
-                    }
+                    $(".ui-tabs-nav").
+                    append("<button title='Help' class='menu-button translateT' id='button-help'></button>");
+                    $('#button-help').button({
+                        text: false,
+                        icons: {
+                            primary: 'ui-icon-help'
+                        }
+                    }).click(function () {
+                        $dialogHelp.dialog('open');
+                    });
                 }
-                if (res[object].type === 'enum') enums.push(res[object]._id);
-            }
-            objectsReady = true;
-            console.log('received all objects');
-            if (statesReady && typeof callback === 'function') callback();
-        });
-    }
+            });
+        }
 
-    var listDevices;
-    // Devices
-    function getDevices(callback) {
-        getData( function() {
-            listDevices = objects;
-            console.log(listDevices);
-            refreshGridDevices();
-        });
-    }
+        function initDialogsMisc() {
+            $dialogHelp.dialog({
+                autoOpen: false,
+                modal: true,
+                width: 640,
+                height: 400
+            });
+        }
+
+        var states = {};
+        var objects = {};
+        var enums = [];
+        var metadata = {};
+
+        function getData(callback) {
+            $('#load_grid-devices').show();
+
+            var objectsReady;
+            var statesReady;
+
+            console.log('requesting all states');
+            servConn.getStates('*', function (err, res) {
+                $('#load_grid-devices').hide();
+                states = res;
+                statesReady = true;
+                console.log('received all states');
+                if (objectsReady && typeof callback === 'function') callback();
+            });
+
+            console.log('requesting all objects');
+
+            servConn.getObjects(function (err, res) {
+                $('#load_grid-devices').hide();
+                metadata = {};
+                objects = {};
+                enums = [];
+                for (var object in res) {
+                    var obj = res[object];
+                    if (obj._id.search("zwave") == 0) {
+                        if (obj.type == "device") {
+                            objects[obj._id] = obj;
+                        } else {
+                            metadata[obj._id] = obj;
+                        }
+                    }
+                    if (res[object].type === 'enum') enums.push(res[object]._id);
+                }
+                objectsReady = true;
+                console.log('received all objects');
+                if (statesReady && typeof callback === 'function') callback();
+            });
+        }
+
+        var listDevices;
+        // Devices
+        function getDevices(callback) {
+            getData( function() {
+                listDevices = objects;
+                console.log(listDevices);
+                refreshGridDevices();
+            });
+        }
 
         var scrollPosition = 0;
         var ids = [];
@@ -410,332 +410,332 @@ $(document).ready(function () {
             $gridDevices.trigger("reloadGrid");
         }
 
-    function initGridDevices() {
-        $gridDevices.jqGrid({
-            colNames: ['Node Id', 'Basic Type', 'Generic Type', 'Product', 'Name', 'Location', 'Value', 'Last Heard', 'Status'],
-            colModel: [
-                {name:'nodeid',     index: 'nodeid',        width: 100, fixed: false, classes: 'device-cell'},
-                {name:'basictype',  index: 'basictype',     width: 100, fixed: false, classes: 'device-cell'},
-                {name:'generictype', index: 'genericype',   width: 400, fixed: false, classes: 'device-cell'},
-                {name:'product',    index: 'product',       width: 400, fixed: false, classes: 'device-cell'},
-                {name:'name',       index: 'name',          width: 224, fixed: false, classes: 'device-cell'},
-                {name:'location',   index: 'location',      width: 224, fixed: false, classes: 'device-cell'},
-                {name:'value',      index: 'value',         width: 100, fixed: false, classes: 'device-cell'},
-                {name:'lastheard',  index: 'lastheard',     width: 100, fixed: false, classes: 'device-cell'},
-                {name:'status',     index: 'status',        width: 100, fixed: false, classes: 'device-cell'}
-            ],
+        function initGridDevices() {
+            $gridDevices.jqGrid({
+                colNames: ['Node Id', 'Basic Type', 'Generic Type', 'Product', 'Name', 'Location', 'Value', 'Last Heard', 'Status'],
+                colModel: [
+                    {name:'nodeid',     index: 'nodeid',        width: 100, fixed: false, classes: 'device-cell'},
+                    {name:'basictype',  index: 'basictype',     width: 100, fixed: false, classes: 'device-cell'},
+                    {name:'generictype', index: 'genericype',   width: 400, fixed: false, classes: 'device-cell'},
+                    {name:'product',    index: 'product',       width: 400, fixed: false, classes: 'device-cell'},
+                    {name:'name',       index: 'name',          width: 224, fixed: false, classes: 'device-cell'},
+                    {name:'location',   index: 'location',      width: 224, fixed: false, classes: 'device-cell'},
+                    {name:'value',      index: 'value',         width: 100, fixed: false, classes: 'device-cell'},
+                    {name:'lastheard',  index: 'lastheard',     width: 100, fixed: false, classes: 'device-cell'},
+                    {name:'status',     index: 'status',        width: 100, fixed: false, classes: 'device-cell'}
+                ],
                 idPrefix:   'zwave',
-            datatype:   'local',
-            rowNum:     100,
-            autowidth:  true,
-            width:      '1000',
-            height:     '600',
-            rowList:    [25, 50, 100, 500],
-            pager:      $('#pager-devices'),
-            sortname:   'timestamp',
-            viewrecords: true,
-            sortorder:  'desc',
-            caption:    _('Devices'),
-            subGrid:    true,
-            ignoreCase: true,
-            subGridRowExpanded: function(grid_id, row_id) {
-                subGridChannels(grid_id, row_id);
-            },
-            ondblClickRow: function (rowid, iRow, iCol, e) {
-                removeSelectionAfterDblClick();
-                $gridDevices.jqGrid('toggleSubGridRow', rowid);
-            },
-            onSelectRow: function (rowid, iRow, iCol, e) {
-                $('#setName').addClass('ui-state-enabled');
-                $('#setLocation').addClass('ui-state-enabled');
+                datatype:   'local',
+                rowNum:     100,
+                autowidth:  true,
+                width:      '1000',
+                height:     '600',
+                rowList:    [25, 50, 100, 500],
+                pager:      $('#pager-devices'),
+                sortname:   'timestamp',
+                viewrecords: true,
+                sortorder:  'desc',
+                caption:    _('Devices'),
+                subGrid:    true,
+                ignoreCase: true,
+                subGridRowExpanded: function(grid_id, row_id) {
+                    subGridChannels(grid_id, row_id);
+                },
+                ondblClickRow: function (rowid, iRow, iCol, e) {
+                    removeSelectionAfterDblClick();
+                    $gridDevices.jqGrid('toggleSubGridRow', rowid);
+                },
+                onSelectRow: function (rowid, iRow, iCol, e) {
+                    $('#setName').addClass('ui-state-enabled');
+                    $('#setLocation').addClass('ui-state-enabled');
                     $('#refreshNode').addClass('ui-state-enabled');
-            },
-            gridComplete: function () {
+                },
+                gridComplete: function () {
                     for (var j = 0; j < ids.length; j = j + 1) {
                         $gridDevices.jqGrid('expandSubGridRow', ids[j]);
-            }
+                    }
                 }
-        }).navGrid('#pager-devices', {
-            search: false,
-            edit: false,
-            add: false,
-            del: false,
-            refresh: false
+            }).navGrid('#pager-devices', {
+                search: false,
+                edit: false,
+                add: false,
+                del: false,
+                refresh: false
                 /*
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-pencil',
-            onClickButton: dialogSetName,
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-pencil',
+                 onClickButton: dialogSetName,
                  position: 'last',
-            id: 'setName',
-            title: _('Set Name'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-image',
-            onClickButton: dialogSetLocation,
+                 id: 'setName',
+                 title: _('Set Name'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-image',
+                 onClickButton: dialogSetLocation,
                  position: 'last',
-            id: 'setLocation',
-            title: _('Set Location'),
-            cursor: 'pointer'
+                 id: 'setLocation',
+                 title: _('Set Location'),
+                 cursor: 'pointer'
                  */
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
+            }).jqGrid('navButtonAdd', '#pager-devices', {
+                caption: '',
                 buttonicon: 'ui-icon-minus',
                 onClickButton: removeDevice,
-            position: 'first',
+                position: 'first',
                 id: 'removeDevice',
                 title: _('Remove Device(s)'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
+                cursor: 'pointer'
+            }).jqGrid('navButtonAdd', '#pager-devices', {
+                caption: '',
                 buttonicon: 'ui-icon-plus',
                 onClickButton: addDevice,
-            position: 'first',
+                position: 'first',
                 id: 'addDevice',
                 title: _('Add Device(s)'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
+                cursor: 'pointer'
+            }).jqGrid('navButtonAdd', '#pager-devices', {
+                caption: '',
                 buttonicon: 'ui-icon-refresh',
                 onClickButton: refreshDevices,
-            position: 'first',
+                position: 'first',
                 id: 'refresh',
                 title: _('Refresh'),
-            cursor: 'pointer'
+                cursor: 'pointer'
                 /*
                  // TODO: ADD SUPPORT FOR THIS FUNCTIONS
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
                  buttonicon: 'ui-icon-clock',
-            onClickButton: getDevices,
-            position: 'first',
+                 onClickButton: getDevices,
+                 position: 'first',
                  id: 'setPolling',
                  title: _('Set Polling'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-home',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'createPrimary',
-            title: _('Create Primary'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-arrowrefresh-1-e',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'receiveConfiguration',
-            title: _('Receive Configuration'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-trash',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'removeDevice',
-            title: _('Remove Device'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-close',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'removeFailedNode',
-            title: _('Remove Failed Node'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-notice',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'hasNodeFailed',
-            title: _('Has Node Failed'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-alert',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'replaceFailedNode',
-            title: _('Replace Failed Node'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-arrow-1-e',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'transferPrimaryRole',
-            title: _('Transfer Primary Role'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-shuffle',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'requestNetworkUpdate',
-            title: _('Request Network Update'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-transfer-e-w',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'requestNodeNeighborUpdate',
-            title: _('Request Node Neighbor Update'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-arrow-1-w',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'assignReturnRoute',
-            title: _('Assign Return Route'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-arrowreturnthick-1-w',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'deleteAllReturnRoutes',
-            title: _('Delete All Return Routes'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-arrowrefresh-1-n',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'sendNodeInformation',
-            title: _('Send Node Information'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-link',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'replicationSend',
-            title: _('Replication Send'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-zoomin',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'addButton',
-            title: _('Add Button'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-zoomout',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'deleteButton',
-            title: _('Delete Button'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-circle-triangle-e',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'scenes',
-            title: _('Scenes'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-circle-triangle-s',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'topology',
-            title: _('Topology'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-circle-triangle-w',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'statistics',
-            title: _('Statistics'),
-            cursor: 'pointer'
-        }).jqGrid('navButtonAdd', '#pager-devices', {
-            caption: '',
-            buttonicon: 'ui-icon-circle-triangle-n',
-            onClickButton: getDevices,
-            position: 'first',
-            id: 'testAndHeal',
-            title: _('Test & Heal'),
-            cursor: 'pointer'
-            */
-        }).jqGrid('filterToolbar', {
-            defaultSearch: 'cn',
-            autosearch: true,
-            searchOnEnter: false,
-            enableClear: false,
-            beforeSearch: function () {
-                var postdata = $gridDevices.jqGrid('getGridParam', 'postData');
-                console.log('beforeSearch', postdata);
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-home',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'createPrimary',
+                 title: _('Create Primary'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-arrowrefresh-1-e',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'receiveConfiguration',
+                 title: _('Receive Configuration'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-trash',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'removeDevice',
+                 title: _('Remove Device'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-close',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'removeFailedNode',
+                 title: _('Remove Failed Node'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-notice',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'hasNodeFailed',
+                 title: _('Has Node Failed'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-alert',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'replaceFailedNode',
+                 title: _('Replace Failed Node'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-arrow-1-e',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'transferPrimaryRole',
+                 title: _('Transfer Primary Role'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-shuffle',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'requestNetworkUpdate',
+                 title: _('Request Network Update'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-transfer-e-w',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'requestNodeNeighborUpdate',
+                 title: _('Request Node Neighbor Update'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-arrow-1-w',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'assignReturnRoute',
+                 title: _('Assign Return Route'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-arrowreturnthick-1-w',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'deleteAllReturnRoutes',
+                 title: _('Delete All Return Routes'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-arrowrefresh-1-n',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'sendNodeInformation',
+                 title: _('Send Node Information'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-link',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'replicationSend',
+                 title: _('Replication Send'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-zoomin',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'addButton',
+                 title: _('Add Button'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-zoomout',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'deleteButton',
+                 title: _('Delete Button'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-circle-triangle-e',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'scenes',
+                 title: _('Scenes'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-circle-triangle-s',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'topology',
+                 title: _('Topology'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-circle-triangle-w',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'statistics',
+                 title: _('Statistics'),
+                 cursor: 'pointer'
+                 }).jqGrid('navButtonAdd', '#pager-devices', {
+                 caption: '',
+                 buttonicon: 'ui-icon-circle-triangle-n',
+                 onClickButton: getDevices,
+                 position: 'first',
+                 id: 'testAndHeal',
+                 title: _('Test & Heal'),
+                 cursor: 'pointer'
+                 */
+            }).jqGrid('filterToolbar', {
+                defaultSearch: 'cn',
+                autosearch: true,
+                searchOnEnter: false,
+                enableClear: false,
+                beforeSearch: function () {
+                    var postdata = $gridDevices.jqGrid('getGridParam', 'postData');
+                    console.log('beforeSearch', postdata);
 
-            }
-        });
-        $gridDevices.contextmenu({
-            delegate: "td.device-cell",
-            menu: [
-                {title: _("Set Name"), cmd: "dialogSetName", uiIcon: "ui-icon-pencil"},
-                {title: _("Set Location"), cmd: "dialogSetLocation", uiIcon: "ui-icon-image"},
+                }
+            });
+            $gridDevices.contextmenu({
+                delegate: "td.device-cell",
+                menu: [
+                    {title: _("Set Name"), cmd: "dialogSetName", uiIcon: "ui-icon-pencil"},
+                    {title: _("Set Location"), cmd: "dialogSetLocation", uiIcon: "ui-icon-image"},
                     {title: _("Refresh Node"), cmd: "refreshNode", uiIcon: "ui-icon-refresh"},
-                /*
-                // TODO: ADD SUPPORT FOR THIS FUNCTIONS
-                {title: _("Set Group"), cmd: "setGroup", uiIcon: "ui-icon-newwin"},
-                {title: _("Set Polling"), cmd: "setPolling", uiIcon: "ui-icon-clock"},
-                {title: "----"},
-                {title: _("Receive Configuration"), cmd: "receiveConfiguration", uiIcon: "ui-icon-arrowrefresh-1-e"},
-                {title: "----"},
-                {title: _("Remove Device"), cmd: "removeDevice", uiIcon: "ui-icon-trash"}
-                */
-            ],
-            select: function(event, ui) {
-                var cmd = ui.cmd;
-                var address = ui.target.parent().find('[aria-describedby$="_ADDRESS"]').text();
-                switch (cmd) {
-                    case 'dialogSetName':
-                        dialogSetName();
-                        break;
-                    case 'dialogSetLocation':
-                        dialogSetLocation();
-                        break;
+                    /*
+                     // TODO: ADD SUPPORT FOR THIS FUNCTIONS
+                     {title: _("Set Group"), cmd: "setGroup", uiIcon: "ui-icon-newwin"},
+                     {title: _("Set Polling"), cmd: "setPolling", uiIcon: "ui-icon-clock"},
+                     {title: "----"},
+                     {title: _("Receive Configuration"), cmd: "receiveConfiguration", uiIcon: "ui-icon-arrowrefresh-1-e"},
+                     {title: "----"},
+                     {title: _("Remove Device"), cmd: "removeDevice", uiIcon: "ui-icon-trash"}
+                     */
+                ],
+                select: function(event, ui) {
+                    var cmd = ui.cmd;
+                    var address = ui.target.parent().find('[aria-describedby$="_ADDRESS"]').text();
+                    switch (cmd) {
+                        case 'dialogSetName':
+                            dialogSetName();
+                            break;
+                        case 'dialogSetLocation':
+                            dialogSetLocation();
+                            break;
                         case 'refreshNode':
                             refreshNode();
-                    case 'delete':
-                        break;
-                    default:
-                        alert("todo " + cmd + " on " + address);
+                        case 'delete':
+                            break;
+                        default:
+                            alert("todo " + cmd + " on " + address);
+                    }
                 }
-            }
-        });
+            });
 
-        $dialogSetName.dialog({
-            autoOpen: false,
-            modal: true,
-            width: 400,
-            height: 200,
-            buttons: [
-                {
-                    text: _('Save'),
-                    click: function () {
-                        var $that = $(this);
-                        var renameAddress = $('#rename-address').val();
-                        var renameName = $('#rename-name').val();
-                        var rowid = $('#rename-rowid').val();
-                        var gridid = $('#rename-gridid').val();
+            $dialogSetName.dialog({
+                autoOpen: false,
+                modal: true,
+                width: 400,
+                height: 200,
+                buttons: [
+                    {
+                        text: _('Save'),
+                        click: function () {
+                            var $that = $(this);
+                            var renameAddress = $('#rename-address').val();
+                            var renameName = $('#rename-name').val();
+                            var rowid = $('#rename-rowid').val();
+                            var gridid = $('#rename-gridid').val();
 
-                        servConn._socket.emit('setState', 'zwave.0.NODE'+renameAddress, {
-                            val: {nodeid:renameAddress, name:renameName, action:"setName"},
-                            ack: true
-                        }, function (res, err) {
-                            console.log("result: " + res);
-                            console.log("error: " + err);
+                            servConn._socket.emit('setState', 'zwave.0.NODE'+renameAddress, {
+                                val: {nodeid:renameAddress, name:renameName, action:"setName"},
+                                ack: true
+                            }, function (res, err) {
+                                console.log("result: " + res);
+                                console.log("error: " + err);
 
-                            $that.dialog('close');
+                                $that.dialog('close');
 
                                 var time = 10;
                                 $dialogAddCountdown.dialog('open');
@@ -750,43 +750,43 @@ $(document).ready(function () {
                                         refreshDevices();
                                     }
                                 }, 1000);
-                        });
+                            });
 
+                        }
+                    },
+                    {
+                        text: _('Cancel'),
+                        click: function () {
+                            $(this).dialog('close');
+                        }
                     }
-                },
-                {
-                    text: _('Cancel'),
-                    click: function () {
-                        $(this).dialog('close');
-                    }
-                }
-            ]
-        });
+                ]
+            });
 
 
-        $dialogSetLocation.dialog({
-            autoOpen: false,
-            modal: true,
-            width: 400,
-            height: 200,
-            buttons: [
-                {
-                    text: _('Save'),
-                    click: function () {
-                        var $that = $(this);
-                        var renameAddress = $('#rename-address').val();
-                        var renameName = $('#rename-loc').val();
-                        var rowid = $('#rename-rowid').val();
-                        var gridid = $('#rename-gridid').val();
+            $dialogSetLocation.dialog({
+                autoOpen: false,
+                modal: true,
+                width: 400,
+                height: 200,
+                buttons: [
+                    {
+                        text: _('Save'),
+                        click: function () {
+                            var $that = $(this);
+                            var renameAddress = $('#rename-address').val();
+                            var renameName = $('#rename-loc').val();
+                            var rowid = $('#rename-rowid').val();
+                            var gridid = $('#rename-gridid').val();
 
-                        servConn._socket.emit('setState', 'zwave.0.NODE'+renameAddress, {
-                            val: {nodeid:renameAddress, name:renameName, action:"setLocation"},
-                            ack: true
-                        }, function (res, err) {
-                            console.log("result: " + res);
-                            console.log("error: " + err);
+                            servConn._socket.emit('setState', 'zwave.0.NODE'+renameAddress, {
+                                val: {nodeid:renameAddress, name:renameName, action:"setLocation"},
+                                ack: true
+                            }, function (res, err) {
+                                console.log("result: " + res);
+                                console.log("error: " + err);
 
-                            $that.dialog('close');
+                                $that.dialog('close');
                                 var time = 10;
                                 $dialogAddCountdown.dialog('open');
                                 var addInterval = setInterval(function () {
@@ -800,18 +800,18 @@ $(document).ready(function () {
                                         refreshDevices();
                                     }
                                 }, 1000);
-                        });
+                            });
 
+                        }
+                    },
+                    {
+                        text: _('Cancel'),
+                        click: function () {
+                            $(this).dialog('close');
+                        }
                     }
-                },
-                {
-                    text: _('Cancel'),
-                    click: function () {
-                        $(this).dialog('close');
-                    }
-                }
-            ]
-        });
+                ]
+            });
 
             $dialogAddCountdown.dialog({
                 autoOpen: false,
@@ -895,172 +895,172 @@ $(document).ready(function () {
                 });
             }
 
-        function subGridChannels(grid_id, row_id) {
-            var subgrid_table_id = 'channels_' + row_id + '_t';
-            $('#' + grid_id).html('<table id="' + subgrid_table_id + '"></table>');
-            var gridConf = {
-                datatype: 'local',
-            // TODO: Implement Help Function
-                    colNames: ['Comclass', 'Genre', 'Index', 'Instance', 'Label', 'Min', 'Max', 'Read Only', 'Write Only', 'Type', 'Units', 'Value', 'Node Id', 'Name', /*'Help'*/],
-                colModel: [
-                    {name:'comclass', index: 'comclass', width: 120, fixed: false, classes: 'sub-cell'},
-                    {name:'genre', index: 'genre', width: 100, fixed: false, classes: 'sub-cell'},
-                    {name:'index', index: 'index', width: 100, fixed: false, classes: 'sub-cell'},
-                    {name:'instance', index: 'instance', width: 100, fixed: false, classes: 'sub-cell'},
-                    {name:'label', index: 'label', width: 600, fixed: false, classes: 'sub-cell'},
-                    {name:'min', index: 'min', width: 120, fixed: false, classes: 'sub-cell'},
-                    {name:'max', index: 'max', width: 120, fixed: false, classes: 'sub-cell'},
-                    {name:'read_only', index: 'read_only', width: 120, fixed: false, classes: 'sub-cell'},
-                    {name:'write_only', index: 'write_only', width: 120, fixed: false, classes: 'sub-cell'},
-                    {name:'type', index: 'type', width: 120, fixed: false, classes: 'sub-cell'},
-                    {name:'units', index: 'units', width: 100, fixed: false, classes: 'sub-cell'},
-                    {name:'value', index: 'value', width: 120, fixed: false, classes: 'sub-cell'},
-                    {name:'nodeid', index: 'nodeid', width: 0, fixed: false, classes: 'sub-cell', hidden: true},
-                        {name:'name', index: 'name', width: 0, fixed: false, classes: 'sub-cell', hidden: true},
+            function subGridChannels(grid_id, row_id) {
+                var subgrid_table_id = 'channels_' + row_id + '_t';
+                $('#' + grid_id).html('<table id="' + subgrid_table_id + '"></table>');
+                var gridConf = {
+                    datatype: 'local',
                     // TODO: Implement Help Function
-                    // {name:'help', index: 'help', width: 0, fixed: false, classes: 'sub-cell', hidden: true},
-                ],
-                rowNum: 1000000,
-                autowidth: true,
-                height: 'auto',
-                width: 1000,
-                sortorder: 'desc',
-                viewrecords: true,
-                ignoreCase: true,
-                onSelectRow: function (rowid, e) {
-                    $('#setName').addClass('ui-state-disabled');
-                    $('#setLocation').addClass('ui-state-disabled');
+                    colNames: ['Comclass', 'Genre', 'Index', 'Instance', 'Label', 'Min', 'Max', 'Read Only', 'Write Only', 'Type', 'Units', 'Value', 'Node Id', 'Name', /*'Help'*/],
+                    colModel: [
+                        {name:'comclass', index: 'comclass', width: 120, fixed: false, classes: 'sub-cell'},
+                        {name:'genre', index: 'genre', width: 100, fixed: false, classes: 'sub-cell'},
+                        {name:'index', index: 'index', width: 100, fixed: false, classes: 'sub-cell'},
+                        {name:'instance', index: 'instance', width: 100, fixed: false, classes: 'sub-cell'},
+                        {name:'label', index: 'label', width: 600, fixed: false, classes: 'sub-cell'},
+                        {name:'min', index: 'min', width: 120, fixed: false, classes: 'sub-cell'},
+                        {name:'max', index: 'max', width: 120, fixed: false, classes: 'sub-cell'},
+                        {name:'read_only', index: 'read_only', width: 120, fixed: false, classes: 'sub-cell'},
+                        {name:'write_only', index: 'write_only', width: 120, fixed: false, classes: 'sub-cell'},
+                        {name:'type', index: 'type', width: 120, fixed: false, classes: 'sub-cell'},
+                        {name:'units', index: 'units', width: 100, fixed: false, classes: 'sub-cell'},
+                        {name:'value', index: 'value', width: 120, fixed: false, classes: 'sub-cell'},
+                        {name:'nodeid', index: 'nodeid', width: 0, fixed: false, classes: 'sub-cell', hidden: true},
+                        {name:'name', index: 'name', width: 0, fixed: false, classes: 'sub-cell', hidden: true},
+                        // TODO: Implement Help Function
+                        // {name:'help', index: 'help', width: 0, fixed: false, classes: 'sub-cell', hidden: true},
+                    ],
+                    rowNum: 1000000,
+                    autowidth: true,
+                    height: 'auto',
+                    width: 1000,
+                    sortorder: 'desc',
+                    viewrecords: true,
+                    ignoreCase: true,
+                    onSelectRow: function (rowid, e) {
+                        $('#setName').addClass('ui-state-disabled');
+                        $('#setLocation').addClass('ui-state-disabled');
 
-                    // unselect devices grid
-                    $gridDevices.jqGrid('resetSelection');
-                },
-                gridComplete: function () {
-                }
-            };
-            var $subgrid = $('#' + subgrid_table_id)
-            $subgrid.jqGrid(gridConf);
-            var device;
+                        // unselect devices grid
+                        $gridDevices.jqGrid('resetSelection');
+                    },
+                    gridComplete: function () {
+                    }
+                };
+                var $subgrid = $('#' + subgrid_table_id)
+                $subgrid.jqGrid(gridConf);
+                var device;
 
-            var rowData = [];
-            for (var i in listDevices) {
-                if (listDevices[i].gridid != undefined) {
+                var rowData = [];
+                for (var i in listDevices) {
+                    if (listDevices[i].gridid != undefined) {
                         var gridid = "zwave" + listDevices[i].gridid;
-                    if (gridid == row_id) {
-                        var classes = listDevices[i].native.classes;
-                        for (var clazz in classes) {
-                            var cl = classes[clazz];
-                            for (var claz in cl) {
-                                var clz = cl[claz];
-                                if (clz.genre != "user") {
-                                    device = new Object();
+                        if (gridid == row_id) {
+                            var classes = listDevices[i].native.classes;
+                            for (var clazz in classes) {
+                                var cl = classes[clazz];
+                                for (var claz in cl) {
+                                    var clz = cl[claz];
+                                    if (clz.genre != "user") {
+                                        device = new Object();
 
-                                    // device.comclass = clz.comclass;
-                                    device.comclass = clz.class_id;
-                                    device.genre = clz.genre;
-                                    device.index = clz.index;
-                                    device.instance = clz.instance;
-                                    device.label = clz.label;
-                                    device.max = clz.max;
-                                    device.min = clz.min;
-                                    // device.nodeid = clz.nodeid;
-                                    device.nodeid = clz.node_id;
-                                    if (clz.genre == "basic") {
-                                        device.read_only = true;
-                                    } else {
-                                        device.read_only = clz.read_only;
+                                        // device.comclass = clz.comclass;
+                                        device.comclass = clz.class_id;
+                                        device.genre = clz.genre;
+                                        device.index = clz.index;
+                                        device.instance = clz.instance;
+                                        device.label = clz.label;
+                                        device.max = clz.max;
+                                        device.min = clz.min;
+                                        // device.nodeid = clz.nodeid;
+                                        device.nodeid = clz.node_id;
+                                        if (clz.genre == "basic") {
+                                            device.read_only = true;
+                                        } else {
+                                            device.read_only = clz.read_only;
+                                        }
+                                        device.type = clz.type;
+                                        device.units = clz.units;
+                                        device.value = clz.value;
+                                        device.write_only = clz.write_only;
+                                        // TODO: Implement Help Function
+                                        // device.help = clz.help;
+
+                                        device.name = calcName(device.nodeid, device.comclass, device.label);
+
+                                        rowData.push(device);
                                     }
-                                    device.type = clz.type;
-                                    device.units = clz.units;
-                                    device.value = clz.value;
-                                    device.write_only = clz.write_only;
-                                    // TODO: Implement Help Function
-                                    // device.help = clz.help;
-
-                                    device.name = calcName(device.nodeid, device.comclass, device.label);
-
-                                    rowData.push(device);
                                 }
                             }
                         }
                     }
                 }
+                $subgrid.jqGrid('addRowData', '_id', rowData);
+                $subgrid.trigger('reloadGrid');
+
             }
-            $subgrid.jqGrid('addRowData', '_id', rowData);
-            $subgrid.trigger('reloadGrid');
 
-        }
+            $body.contextmenu({
+                delegate: "td.sub-cell",
+                menu: [
+                    {title: _("Change Parameter(s)"), cmd: "paramsetValues", uiIcon: "ui-icon-gear"}
+                ],
+                beforeOpen: function(event, ui) {
+                    var read_only = ui.target.parent().find('[aria-describedby$="_read_only"]').text();
+                    var genre = ui.target.parent().find('[aria-describedby$="_genre"]').text();
 
-        $body.contextmenu({
-            delegate: "td.sub-cell",
-            menu: [
-                {title: _("Change Parameter(s)"), cmd: "paramsetValues", uiIcon: "ui-icon-gear"}
-            ],
-            beforeOpen: function(event, ui) {
-                var read_only = ui.target.parent().find('[aria-describedby$="_read_only"]').text();
-                var genre = ui.target.parent().find('[aria-describedby$="_genre"]').text();
+                    if (read_only == "false") {
+                        $body.contextmenu("enableEntry", 'paramsetValues', true);
+                    } else {
+                        $body.contextmenu("enableEntry", 'paramsetValues', false);
+                    }
+                },
+                select: function(event, ui) {
+                    var cmd = ui.cmd;
 
-                if (read_only == "false") {
-                    $body.contextmenu("enableEntry", 'paramsetValues', true);
-                } else {
-                    $body.contextmenu("enableEntry", 'paramsetValues', false);
+                    switch (cmd) {
+                        case 'paramsetValues':
+                            dialogparamsetValues(ui.target.parent());
+                            break;
+                        default:
+                            alert("todo " + cmd + " on " + address);
+                    }
                 }
-            },
-            select: function(event, ui) {
-                var cmd = ui.cmd;
+            });
 
-                switch (cmd) {
-                    case 'paramsetValues':
-                        dialogparamsetValues(ui.target.parent());
-                        break;
-                    default:
-                        alert("todo " + cmd + " on " + address);
-                }
-            }
-        });
+            $dialogparamsetValues.dialog({
+                autoOpen: false,
+                modal: true,
+                width: 'auto',
+                height: 'auto',
+                buttons: [
+                    {
+                        text: _('Save'),
+                        click: function () {
+                            var $that = $(this);
+                            var val = $('#input-value').val();
+                            var nodeid = $('#nodeid').val();
+                            var label = $('#label').val();
+                            var index = $('#index').val();
+                            var address = $('#address').val();
+                            var genre = $('#genre').val();
+                            var comclass = $('#comclass').val();
+                            var name = $('#name').val();
 
-        $dialogparamsetValues.dialog({
-            autoOpen: false,
-            modal: true,
-            width: 'auto',
-            height: 'auto',
-            buttons: [
-                {
-                    text: _('Save'),
-                    click: function () {
-                        var $that = $(this);
-                        var val = $('#input-value').val();
-                        var nodeid = $('#nodeid').val();
-                        var label = $('#label').val();
-                        var index = $('#index').val();
-                        var address = $('#address').val();
-                        var genre = $('#genre').val();
-                        var comclass = $('#comclass').val();
-                        var name = $('#name').val();
-
-                        /*
-                         "value_id": "7-39-1-0",
-                         "node_id": 7,
-                         "class_id": 39,
-                         "type": "list",
-                         "genre": "system",
-                         "instance": 1,
-                         "index": "0",
-                         */
-                        if (genre == "config") {
+                            /*
+                             "value_id": "7-39-1-0",
+                             "node_id": 7,
+                             "class_id": 39,
+                             "type": "list",
+                             "genre": "system",
+                             "instance": 1,
+                             "index": "0",
+                             */
+                            if (genre == "config") {
                                 servConn._socket.emit('setState', name, {
-                                val: {nodeid:nodeid, action:"changeConfig", paramId: index, paramValue: val, label: label, index: index, comclass: comclass},
-                                ack: true
-                            }, function (res, err) {
-                                $that.dialog('close');
-                            });
-                        } else if (genre == "system") {
+                                    val: {nodeid:nodeid, action:"changeConfig", paramId: index, paramValue: val, label: label, index: index, comclass: comclass},
+                                    ack: true
+                                }, function (res, err) {
+                                    $that.dialog('close');
+                                });
+                            } else if (genre == "system") {
                                 servConn._socket.emit('setState', name, {
-                                val: {nodeid:nodeid, action:"changeSystem", paramId: index, paramValue: val, label: label, index: index, comclass: comclass},
-                                ack: true
-                            }, function (res, err) {
-                                $that.dialog('close');
-                            });
-                        }
+                                    val: {nodeid:nodeid, action:"changeSystem", paramId: index, paramValue: val, label: label, index: index, comclass: comclass},
+                                    ack: true
+                                }, function (res, err) {
+                                    $that.dialog('close');
+                                });
+                            }
 
                             var time = 5;
                             $('#add-countdown').html(time);
@@ -1074,123 +1074,123 @@ $(document).ready(function () {
                                     addInterval = null;
 
                                     refreshDevices();
-                    }
+                                }
                             }, 1000);
                         }
-                },
-                {
-                    text: _('Cancel'),
-                    click: function () {
-                        $(this).dialog('close');
+                    },
+                    {
+                        text: _('Cancel'),
+                        click: function () {
+                            $(this).dialog('close');
+                        }
                     }
-                }
-            ]
-        });
+                ]
+            });
 
-    }
-    function refreshGridDevices() {
-        if (!listDevices) {
-            alert('error: listDevices empty');
-            return;
         }
+        function refreshGridDevices() {
+            if (!listDevices) {
+                alert('error: listDevices empty');
+                return;
+            }
             $gridDevices.jqGrid('clearGridData', true);
-        var rowData = [];
-        var device;
-        var x = 0;
-        for (var i in listDevices) {
-            device = new Object();
-            device.nodeid = listDevices[i].native.nodeid;
-            device.basictype = "";
-            device.generictype = listDevices[i].native.type;
-            device.product = listDevices[i].native.product;
-            device.name = listDevices[i].native.name;
-            device.location = listDevices[i].native.loc;
-            device.value = "";
-            device.lastheard = "";
-            device.status = "";
-            //listDevices[i].gridid = i+1;
-            x=x+1;
-            listDevices[i].gridid = x;
+            var rowData = [];
+            var device;
+            var x = 0;
+            for (var i in listDevices) {
+                device = new Object();
+                device.nodeid = listDevices[i].native.nodeid;
+                device.basictype = "";
+                device.generictype = listDevices[i].native.type;
+                device.product = listDevices[i].native.product;
+                device.name = listDevices[i].native.name;
+                device.location = listDevices[i].native.loc;
+                device.value = "";
+                device.lastheard = "";
+                device.status = "";
+                //listDevices[i].gridid = i+1;
+                x=x+1;
+                listDevices[i].gridid = x;
 
                 device._id = x;
-            rowData.push(device);
-        }
-        $gridDevices.jqGrid('addRowData', '_id', rowData);
-        $gridDevices.trigger('reloadGrid');
+                rowData.push(device);
+            }
+            $gridDevices.jqGrid('addRowData', '_id', rowData);
+            $gridDevices.trigger('reloadGrid');
             $('button.paramset:not(.ui-button)').button();
-    }
-
-    function removeSelectionAfterDblClick() {
-        if(document.selection && document.selection.empty) {
-            document.selection.empty();
-        } else if(window.getSelection) {
-            var sel = window.getSelection();
-            sel.removeAllRanges();
         }
-    }
 
-    // Resizing
-    function resizeGrids() {
-        var x = $(window).width();
-        var y = $(window).height();
-        if (x < 1200) x = 1200;
-        if (y < 600) y = 600;
-
-        $('#grid-events').css('height', (y - 84) + 'px').css('width', (x - 18) + 'px');
-        $('#grid-events-inner').css('height', (y - 104) + 'px');
-    }
-    $(window).resize(resizeGrids);
-
-    // Navigation
-    window.onhashchange = function () {
-        var tmp = window.location.hash.slice(1).split('/');
-        hash = tmp[1];
-        if (tmp[2]) {
-            var index = $('#tabs-main a[href="#' + tmp[2] + '"]').parent().index();
-            $tabsMain.tabs("option", "active", index - 2);
+        function removeSelectionAfterDblClick() {
+            if(document.selection && document.selection.empty) {
+                document.selection.empty();
+            } else if(window.getSelection) {
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+            }
         }
-    };
 
-    function dialogSetName() {
-        var devSelected = $gridDevices.jqGrid('getGridParam','selrow');
-        var chGrid = null;
+        // Resizing
+        function resizeGrids() {
+            var x = $(window).width();
+            var y = $(window).height();
+            if (x < 1200) x = 1200;
+            if (y < 600) y = 600;
 
-        var address = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_nodeid"]').html();
-        var name = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_name"]').html();
-        var rowid = devSelected;
+            $('#grid-events').css('height', (y - 84) + 'px').css('width', (x - 18) + 'px');
+            $('#grid-events-inner').css('height', (y - 104) + 'px');
+        }
+        $(window).resize(resizeGrids);
 
-        $('#rename-rowid').val(rowid);
-        $('#rename-gridid').val(chGrid);
-        $('#rename-address').val(address);
-        $('#rename-name').val(name == '&nbsp;' ? '' : name);
-        $dialogSetName.dialog('open');
-    }
+        // Navigation
+        window.onhashchange = function () {
+            var tmp = window.location.hash.slice(1).split('/');
+            hash = tmp[1];
+            if (tmp[2]) {
+                var index = $('#tabs-main a[href="#' + tmp[2] + '"]').parent().index();
+                $tabsMain.tabs("option", "active", index - 2);
+            }
+        };
 
-    function dialogparamsetValues(parent) {
+        function dialogSetName() {
+            var devSelected = $gridDevices.jqGrid('getGridParam','selrow');
+            var chGrid = null;
 
-        var comclass = parent.find('[aria-describedby$="_comclass"]').text();
-        var instance = parent.find('[aria-describedby$="_instance"]').text();
-        var index = parent.find('[aria-describedby$="_index"]').text();
-        var type = parent.find('[aria-describedby$="_type"]').text();
-        var value = parent.find('[aria-describedby$="_value"]').text();
-        var label = parent.find('[aria-describedby$="_label"]').text();
-        var nodeid = parent.find('[aria-describedby$="_nodeid"]').text();
-        var genre = parent.find('[aria-describedby$="_genre"]').text();
-        var name = parent.find('[aria-describedby$="_name"]').text();
+            var address = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_nodeid"]').html();
+            var name = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_name"]').html();
+            var rowid = devSelected;
 
-        // TODO: Implement Help Function
-        // var help = parent.find('[aria-describedby$="_help"]').text();
+            $('#rename-rowid').val(rowid);
+            $('#rename-gridid').val(chGrid);
+            $('#rename-address').val(address);
+            $('#rename-name').val(name == '&nbsp;' ? '' : name);
+            $dialogSetName.dialog('open');
+        }
 
-        $('#nodeid').val(nodeid);
-        $('#label').val(label);
-        $('#index').val(index);
-        $('#genre').val(genre);
-        $('#comclass').val(comclass);
-        $('#name').val(name);
-        // TODO: Implement Help Function
-        // $('#help').val(help);
+        function dialogparamsetValues(parent) {
 
-        var address;
+            var comclass = parent.find('[aria-describedby$="_comclass"]').text();
+            var instance = parent.find('[aria-describedby$="_instance"]').text();
+            var index = parent.find('[aria-describedby$="_index"]').text();
+            var type = parent.find('[aria-describedby$="_type"]').text();
+            var value = parent.find('[aria-describedby$="_value"]').text();
+            var label = parent.find('[aria-describedby$="_label"]').text();
+            var nodeid = parent.find('[aria-describedby$="_nodeid"]').text();
+            var genre = parent.find('[aria-describedby$="_genre"]').text();
+            var name = parent.find('[aria-describedby$="_name"]').text();
+
+            // TODO: Implement Help Function
+            // var help = parent.find('[aria-describedby$="_help"]').text();
+
+            $('#nodeid').val(nodeid);
+            $('#label').val(label);
+            $('#index').val(index);
+            $('#genre').val(genre);
+            $('#comclass').val(comclass);
+            $('#name').val(name);
+            // TODO: Implement Help Function
+            // $('#help').val(help);
+
+            var address;
 //        address = 'zwave.0.NODE'+nodeid+'.CONFIGURATION.'+label;
             if (genre == "config") {
                 address = 'zwave.0.NODE'+nodeid+".CONFIGURATION."+label;
@@ -1198,83 +1198,83 @@ $(document).ready(function () {
                 address = 'zwave.0.NODE' + nodeid + "." + label;
             }
 
-        if (type == "list") {
-            if (objects['zwave.0.NODE'+nodeid] != undefined) {
-                label = label.replace(/\./g, '_'); //.replace(/ /g, '_');
-                if (genre == "config") {
-                    address = 'zwave.0.NODE'+nodeid+".CONFIGURATION."+label;
-                } else {
-                    address = 'zwave.0.NODE'+nodeid;
+            if (type == "list") {
+                if (objects['zwave.0.NODE'+nodeid] != undefined) {
+                    label = label.replace(/\./g, '_'); //.replace(/ /g, '_');
+                    if (genre == "config") {
+                        address = 'zwave.0.NODE'+nodeid+".CONFIGURATION."+label;
+                    } else {
+                        address = 'zwave.0.NODE'+nodeid;
 
-                    for (var o in metadata) {
-                        var obj = metadata[o];
-                        if (obj._id.search(address) == 0 && obj._id.search(label) > 0) {
-                            address = obj._id;
+                        for (var o in metadata) {
+                            var obj = metadata[o];
+                            if (obj._id.search(address) == 0 && obj._id.search(label) > 0) {
+                                address = obj._id;
+                            }
                         }
                     }
-                }
-                var obj = metadata[address];
-                if (obj == undefined) {
-                    alert("This Address is not configured :" + address);
-                }
-                var selectObject = '<select id="input-value" name="input-value">';
-                for (var l = 0; l < obj.native.values.length; l++) {
-                    var lbl = obj.native.values[l];
-                    if (lbl == value) {
-                        selectObject += '<option selected=selected value="'+l+'">'+lbl+'</option>';
-                    } else {
-                        selectObject += '<option value="'+l+'">'+lbl+'</option>';
+                    var obj = metadata[address];
+                    if (obj == undefined) {
+                        alert("This Address is not configured :" + address);
                     }
+                    var selectObject = '<select id="input-value" name="input-value">';
+                    for (var l = 0; l < obj.native.values.length; l++) {
+                        var lbl = obj.native.values[l];
+                        if (lbl == value) {
+                            selectObject += '<option selected=selected value="'+l+'">'+lbl+'</option>';
+                        } else {
+                            selectObject += '<option value="'+l+'">'+lbl+'</option>';
+                        }
+                    }
+                    $('#input-value').replaceWith(selectObject+'</select>');
+                    $('#input-value').select();
+
+                    $dialogparamsetValues.dialog('open');
+                } else {
+                    alert("object for list not found");
                 }
-                $('#input-value').replaceWith(selectObject+'</select>');
-                $('#input-value').select();
+            } else if (type == "byte" || type == "short" || type == "int") {
+                $('#input-value').replaceWith('<input type="text" id="input-value" value=""/>');
+                $('#input-value').attr('type', 'number');
+                $('#input-value').val(value);
+                $dialogparamsetValues.dialog('open');
+            } else if (type == "button") {
+                $('#input-value').replaceWith('<input type="button" id="input-value" value=""/>');
+                $('#input-value').button();
+                $('#input-value').val(label);
+                $('#input-value').on( "click", function() {
+                    alert("Not yet implemented");
+                });
 
                 $dialogparamsetValues.dialog('open');
+            } else if(type == "string") {
+                $('#input-value').replaceWith('<input type="text" id="input-value" value=""/>');
+                $('#input-value').attr('type', 'text');
+                $('#input-value').val(value);
+                $dialogparamsetValues.dialog('open');
             } else {
-                alert("object for list not found");
+                $('#input-value').replaceWith('<input type="text" id="input-value" value=""/>');
+                $('#input-value').attr('type', 'checkbox');
+                $('#input-value').val(value);
+                $dialogparamsetValues.dialog('open');
             }
-            } else if (type == "byte" || type == "short" || type == "int") {
-            $('#input-value').replaceWith('<input type="text" id="input-value" value=""/>');
-            $('#input-value').attr('type', 'number');
-            $('#input-value').val(value);
-            $dialogparamsetValues.dialog('open');
-        } else if (type == "button") {
-            $('#input-value').replaceWith('<input type="button" id="input-value" value=""/>');
-            $('#input-value').button();
-            $('#input-value').val(label);
-            $('#input-value').on( "click", function() {
-                alert("Not yet implemented");
-            });
-
-            $dialogparamsetValues.dialog('open');
-        } else if(type == "string") {
-            $('#input-value').replaceWith('<input type="text" id="input-value" value=""/>');
-            $('#input-value').attr('type', 'text');
-            $('#input-value').val(value);
-            $dialogparamsetValues.dialog('open');
-        } else {
-            $('#input-value').replaceWith('<input type="text" id="input-value" value=""/>');
-            $('#input-value').attr('type', 'checkbox');
-            $('#input-value').val(value);
-            $dialogparamsetValues.dialog('open');
+            $('#address').val(address);
         }
-        $('#address').val(address);
-    }
 
-    function dialogSetLocation() {
-        var devSelected = $gridDevices.jqGrid('getGridParam','selrow');
-        var chGrid = null;
+        function dialogSetLocation() {
+            var devSelected = $gridDevices.jqGrid('getGridParam','selrow');
+            var chGrid = null;
 
-        var address = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_nodeid"]').html();
-        var name = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_location"]').html();
-        var rowid = devSelected;
+            var address = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_nodeid"]').html();
+            var name = $('#grid-devices tr#' + devSelected + ' td[aria-describedby="grid-devices_location"]').html();
+            var rowid = devSelected;
 
-        $('#rename-rowid').val(rowid);
-        $('#rename-gridid').val(chGrid);
-        $('#rename-address').val(address);
-        $('#rename-loc').val(name == '&nbsp;' ? '' : name);
-        $dialogSetLocation.dialog('open');
-    }
+            $('#rename-rowid').val(rowid);
+            $('#rename-gridid').val(chGrid);
+            $('#rename-address').val(address);
+            $('#rename-loc').val(name == '&nbsp;' ? '' : name);
+            $dialogSetLocation.dialog('open');
+        }
 
         function rpcAlert(daemon, cmd, params, callback) {
             socket.emit('rpc', daemon, cmd, params, function (err, res) {
@@ -1284,7 +1284,7 @@ $(document).ready(function () {
                     alert(daemon + ' ' + cmd + '\n' + JSON.stringify(res));
                 }
                 if (typeof callback === 'function') callback(err, res);
-});
+            });
         }
 
         function calcName(nodeid, comclass, idx, instance) {

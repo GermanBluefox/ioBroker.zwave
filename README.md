@@ -106,6 +106,9 @@ Following global Actions are current supported:<br>
 - Danfoss Z Thermostat 014G0013
 
 ## Changelog 
+### 0.2.8 (2016-01-29)
+ - (husky-koglhof) fixed renaming of objects if state change
+ 
 ### 0.2.7 (2016-01-22)
  - (husky-koglhof) changed loglevel from debug to info
    changed Type sensor to Type value

@@ -1,6 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 node_modules
 config
-www/_socket
+www/js/_socket
 .idea
 open-zwave-master

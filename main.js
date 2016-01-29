@@ -82,8 +82,6 @@ var adapter = utils.adapter({
         adapter.subscribeObjects('*');
         adapter.subscribeStates('*');
 
-
-
         adapter.objects.getObjectList({include_docs: true}, function (err, res) {
             res = res.rows;
             objects = {};
@@ -123,45 +121,12 @@ var adapter = utils.adapter({
                                     }
                                     if (action == "addNode") {
                                         zwave.addNode();
-                                        /*
-                                         var time = 60;
-                                         var addInterval = setInterval(function () {
-                                         time = time - 1;
-                                         if (time < 1 || time == NaN) {
-                                         clearInterval(addInterval);
-                                         zwave.cancelControllerCommand();
-                                         addInterval = null;
-                                         }
-                                         }, 1000);
-                                         */
                                     }
                                     if (action == "removeNode") {
                                         zwave.removeNode();
-                                        /*
-                                         var time = 60;
-                                         var addInterval = setInterval(function () {
-                                         time = time - 1;
-                                         if (time < 1 || time == NaN) {
-                                         clearInterval(addInterval);
-                                         zwave.cancelControllerCommand();
-                                         addInterval = null;
-                                         }
-                                         }, 1000);
-                                         */
                                     }
                                     if (action == "refreshNode") {
                                         zwave.refreshNodeInfo(nodeid);
-                                        /*
-                                         var time = 60;
-                                         var addInterval = setInterval(function () {
-                                         time = time - 1;
-                                         if (time < 1 || time == NaN) {
-                                         clearInterval(addInterval);
-                                         zwave.cancelControllerCommand();
-                                         addInterval = null;
-                                         }
-                                         }, 1000);
-                                         */
                                     }
                                 } else if (state.val.paramId != undefined &&
                                     state.val.paramValue != undefined &&
@@ -219,9 +184,7 @@ var adapter = utils.adapter({
                                         // Todo: Not working
                                         adapter.log.debug("setConfigParam for " + id + ", paramId = " + paramId + ", paramValue = " + paramValue);
                                         zwave.setValue({
-                                            //nodeid:   parseInt(obj.native.nodeid),
                                             nodeid:   parseInt(obj.native.node_id),
-                                            //class_id: parseInt(obj.native.comclass),
                                             class_id: parseInt(obj.native.class_id),
                                             instance: parseInt(obj.native.instance),
                                             index:    parseInt(obj.native.index)
@@ -238,7 +201,6 @@ var adapter = utils.adapter({
                                                 root_native = rootObject.native;
                                                 root_common = rootObject.common;
                                                 objr = {type: root_type, native: root_native, common: root_common};
-                                                //namedValue = root_native.classes[comclass][index].values[paramValue];
                                                 namedValue = paramValue;
                                                 root_native.classes[comclass][index].value = namedValue;
 
@@ -250,7 +212,8 @@ var adapter = utils.adapter({
                                     }
                                 }
                             } else {
-                                var value;
+                                var value = state.val;
+
                                 if (state.val == true) {
                                     value = 0;
                                 } else if (state.val == false) {
@@ -258,8 +221,7 @@ var adapter = utils.adapter({
                                 }
 
                                 if (state.ack == false) { // Passiert nur innerhalb von ioBroker, sonst ist ack true
-                                    //adapter.log.error('setState for: nodeid='+obj.native.node_id+': comclass='+obj.native.comclass+': index='+obj.native.index+': instance='+obj.native.instance+': value='+state.val);
-                                    adapter.log.error('setState for: nodeid='+obj.native.node_id+': comclass='+obj.native.class_id+': index='+obj.native.index+': instance='+obj.native.instance+': value='+state.val);
+                                    adapter.log.info('setState for: nodeid='+obj.native.node_id+': comclass='+obj.native.class_id+': index='+obj.native.index+': instance='+obj.native.instance+': value='+state.val);
                                     zwave.setValue({
                                         //nodeid:   parseInt(obj.native.nodeid),
                                         nodeid:   parseInt(obj.native.node_id),
@@ -556,6 +518,7 @@ function calcName(nodeid, comclass, idx, instance) {
 }
 
 function extendObject(nodeid, comclass, value, action) {
+    var reload = false;
     var oname;
 
     if (value != null) {
@@ -578,7 +541,6 @@ function extendObject(nodeid, comclass, value, action) {
 
     adapter.log.debug("####################################### " + oname);
     // TODO: Check if this Object already exists
-    // if (action == "added") {
     if (value !== null) {
         var channels = [];
         var values;
@@ -606,12 +568,16 @@ function extendObject(nodeid, comclass, value, action) {
             if (obj !== undefined && obj !== null) {
                 var d = diff(obj, chObj);
                 if (d !== undefined) {
-                    adapter.log.error("---------> DIFFERENT OBJECT " + chName);
+                    adapter.log.debug("---------> DIFFERENT OBJECT " + chName);
                     adapter.extendObject(chName, chObj);
+                    objects[chName] = chObj;
+                    reload = true;
                 }
             } else {
-                adapter.log.error("---------> NEW CHANNEL OBJECT " + chName);
+                adapter.log.debug("---------> NEW CHANNEL OBJECT " + chName);
                 adapter.extendObject(chName, chObj);
+                objects[chName] = chObj;
+                reload = true;
             }
 
             var stateObj = {
@@ -630,22 +596,15 @@ function extendObject(nodeid, comclass, value, action) {
             };
 
             if (comclasses[comclass] && comclasses[comclass].role) {
-                //if (comclasses[comclass].children && comclasses[comclass].children[values[idx].label]) {
                 if (comclasses[comclass].children && comclasses[comclass].children[value.label]) {
-                    //if (comclasses[comclass].children[values[idx].label].role) {
                     if (comclasses[comclass].children[value.label].role) {
-                        //stateObj.common.role = comclasses[comclass].children[values[idx].label].role;
                         stateObj.common.role = comclasses[comclass].children[value.label].role;
                     } else {
                         stateObj.common.role = comclasses[comclass].role;
                     }
-                    //if (comclasses[comclass].children[values[idx].label].type) {
                     if (comclasses[comclass].children[value.label].type) {
-                        //stateObj.common.type = comclasses[comclass].children[values[idx].label].type;
                         stateObj.common.type = comclasses[comclass].children[value.label].type;
-                        //} else if (comclasses[comclass].children[values[idx]].type) {
                     } else if (comclasses[comclass].children[value.label].type) {
-                        //stateObj.common.type = comclasses[comclass].children[values[idx]].type;
                         stateObj.common.type = comclasses[comclass].children[value].type;
                     }
                 } else {
@@ -668,6 +627,10 @@ function extendObject(nodeid, comclass, value, action) {
                             adapter.states.setState(oname, {val: obj.native.value, ack: true});
                         } else if (o.kind === "D" && (o.path[0] === 'common' && o.path[1] === 'history') || o.path[0] == "acl") {
                             adapter.log.debug("Nothing todo for " + oname);
+                        } else if (o.kind == "E" && o.path[0] == "common" && o.path[1] == "name") {
+                            adapter.log.debug("Nothing todo for " + oname + ", cause Original Name no longer set");
+                        } else if (o.kind == "E" && o.path[0] == "native" && o.path[1] == "units") {
+                            adapter.log.debug("Nothing todo for " + oname + ", cause unit Change");
                         } else {
                             changed = true;
                         }
@@ -675,13 +638,17 @@ function extendObject(nodeid, comclass, value, action) {
                 }
             } else {
                 // NEW OBJECT
-                adapter.log.error("---------> CREATE NEW OBJECT " + oname);
+                adapter.log.debug("---------> CREATE NEW OBJECT " + oname);
                 adapter.extendObject(oname, stateObj);
+                objects[oname] = stateObj;
+                reload = true;
             }
 
             if (changed === true) {
-                adapter.log.error("---------> CHANGED OBJECT " + oname);
+                adapter.log.debug("---------> CHANGED OBJECT " + oname);
                 adapter.extendObject(oname, stateObj);
+                objects[oname] = stateObj;
+                reload = true;
             }
         }
     }
@@ -716,22 +683,34 @@ function extendObject(nodeid, comclass, value, action) {
                         adapter.states.setState(devName, {val: obj.native.value, ack: true});
                     } else if (o.kind === "D" && o.path[0] === 'common' && o.path[1] === 'history') {
                         adapter.log.debug("Nothing todo for " + devName);
-                    } else if (o.kind = "E" && o.path[0] === 'native' && o.path[1] === "manufacturer" && o.rhs == "") {
-                        adapter.log.error("Manufacturer Changed, nothing todo");
+                    } else if (o.kind = "E" && o.path[0] == 'native' && o.path[1] == "manufacturer" && o.rhs == "") {
+                        adapter.log.debug("Manufacturer Changed, nothing todo");
+                    } else if (o.kind = "E" && o.path[0] == 'native' && o.path[1] == "productid" && o.rhs == "") {
+                        adapter.log.debug("productid Changed, nothing todo");
+                    } else if (o.kind = "E" && o.path[0] == 'native' && o.path[4] == "units") {
+                        adapter.log.debug("unit Changed, nothing todo");
                     } else {
                         c = true;
                     }
                 }
                 if (c === true) {
-                    adapter.log.error("---------> DIFFERENT OBJECT " + devName);
+                    adapter.log.debug("---------> DIFFERENT OBJECT " + devName);
                     adapter.extendObject(devName, devObj);
+                    objects[devName] = devObj;
+                    reload = true;
                 }
 
             }
         } else {
-            adapter.log.error("---------> NEW CHANNEL OBJECT " + devName);
+            adapter.log.debug("---------> NEW CHANNEL OBJECT " + devName);
             adapter.extendObject(devName, devObj);
+            objects[devName] = devObj;
+            reload = true;
         }
+    }
+
+    if (reload) {
+        reload = false;
     }
 }
 
