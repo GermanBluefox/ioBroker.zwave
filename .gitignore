@@ -4,3 +4,6 @@ config
 www/js/_socket
 .idea
 open-zwave-master
+test.js
+test.json
+www/js/jqwidgets

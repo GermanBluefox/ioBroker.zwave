@@ -1046,6 +1046,7 @@ var comclasses = {
                              "instance": 1,
                              "index": "0",
                              */
+
                             if (genre == "config") {
                                 servConn._socket.emit('setState', name, {
                                     val: {nodeid:nodeid, action:"changeConfig", paramId: index, paramValue: val, label: label, index: index, comclass: comclass},

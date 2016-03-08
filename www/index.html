@@ -1,129 +1,477 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/html">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>OpenZWave Configurator</title>
-    <link rel="stylesheet" href="css/redmond/jquery-ui.min.css" type="text/css"/>
-    <link rel="stylesheet" href="css/ui.jqgrid.css" type="text/css"/>
-    <link rel="stylesheet" href="css/jquery.multiselect-1.13.css" type="text/css"/>
-    <link rel="stylesheet" href="css/jquery.multiselect.filter.css" type="text/css"/>
-    <link rel="stylesheet" href="css/openzwave-controller.css" type="text/css"/>
+    <title id="Description">ioBroker zWave Administration</title>
+    <link rel="stylesheet" href="js/jqwidgets/styles/jqx.base.css" type="text/css" />
+    <style type="text/css">
+        .jqx-layout-group-auto-hide-content-vertical
+        {
+            width: 200px;
+        }
+        .no-border
+        {
+            border-left-width: 0;
+            border-right-width: 0;
+        }
 
-    <script src="js/jquery-1.11.0.min.js" type="text/javascript"></script>
-    <script src="js/jquery-ui-1.10.4~1.min.js" type="text/javascript"></script>
-    <script src="js/jquery.multiselect-1.13~1.min.js" type="text/javascript"></script>
-    <script src="js/jquery.multiselect.filter.js" type="text/javascript"></script>
-    <script src="js/jquery.ui-contextmenu.min.js"></script>
-
-    <script src="js/i18n/grid.locale-de.js" type="text/javascript"></script>
-    <script src="js/jquery.jqGrid.min.js" type="text/javascript"></script>
-
-    <script src="js/grid.setcolumns.js" type="text/javascript"></script>
+        #RoutingTable div.rtUnavailable {
+            background-color: gray;
+        }
+        #RoutingTable div.rtDirect {
+            background-color: green;
+        }
+        #RoutingTable div.rtNotLinked {
+            background-color: red;
+        }
+        #RoutingTable div.rtDiv {
+            min-width: 20px;
+            min-height: 20px;
+            height: 100%;
+            width: 100%;
+            border-radius: 4px;
+            border-collapse: separate;
+            border: 1px solid #fff;
+            display: table;
+            text-align: center;
+        }
+    </style>
+    <script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxcore.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxribbon.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxwindow.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxmenu.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxlayout.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxdockinglayout.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxbuttons.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxscrollbar.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxdata.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxdatatable.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxlistbox.js"></script>
+    <script type="text/javascript" src="js/initdashboard.js"></script>
 
     <script type="text/javascript" src="js/socket.io.js"></script>
     <script src="js/_socket/info.js"></script>
     <script type="text/javascript" src="conn.js"></script>
 
-    <script src="js/language.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxinput.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxdropdownlist.js"></script>
+    <script type="text/javascript" src="js/jqwidgets/jqxcheckbox.js"></script>
 
-    <script src="js/openzwave-controller.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            servConn.init(null, {
+                onConnChange: function (isConnected) {
+                    console.log("onConnChange isConnected=" + isConnected);
+                    getConfig();
+                    getDevices();
+                }
+            });
 
+            // Create a Main Menu
+            $("#jqxMainMenu").jqxMenu({ width: '100%', height: 30, popupZIndex: 999999});
+
+            var layout = [{
+                type: 'layoutGroup',
+                orientation: 'horizontal',
+                items: [{
+                    type: 'layoutGroup',
+                    orientation: 'vertical',
+                    width: '40%',
+                    items: [{
+                        type: 'tabbedGroup',
+                        allowPin: false,
+                        height: '548',
+                        items: [{
+                            type: 'layoutPanel',
+                            title: 'Devices',
+                            contentContainer: 'TeamsPanel',
+                            initContent: function () {
+                                initDeviceTable();
+                            }
+                        }]
+                    }, {
+                        type: 'tabbedGroup',
+                        height: 320,
+                        allowPin: false,
+                        items: [{
+                            type: 'layoutPanel',
+                            title: 'Controller',
+                            contentContainer: 'ControllerPanel',
+                            initContent: function () {
+                                initControllerTable();
+                            }
+                        }, {
+                            type: 'layoutPanel',
+                            title: 'Topology',
+                            contentContainer: 'TopologyPanel',
+                            initContent: function () {
+                                initTopologyPanel();
+                            }
+
+                        }, /*{
+                            type: 'layoutPanel',
+                            title: 'Statistics',
+                            contentContainer: 'StatisticsPanel',
+                            initContent: function () {
+                            }
+
+                        },*/ {
+                            type: 'layoutPanel',
+                            title: 'Test & Heal',
+                            contentContainer: 'TestHealPanel',
+                            initContent: function () {
+                                initTestHealPanel();
+                            }
+                        }]
+                    }]
+                }, {
+                    type: 'layoutGroup',
+                    orientation: 'vertical',
+                    width: '60%',
+                    items: [{
+                        type: 'tabbedGroup',
+                        height: 868,
+                        allowPin: false,
+                        items: [{
+                            type: 'layoutPanel',
+                            title: 'Global',
+                            contentContainer: 'GlobalPanel',
+                            initContent: function () {
+                                // initGlobalTable(1);
+                            }
+                        },{
+                            type: 'layoutPanel',
+                            title: 'Config',
+                            contentContainer: 'ConfigPanel',
+                            initContent: function () {
+                                // initConfigTable('config', 1, 1);
+                            }
+                        }, {
+                            type: 'layoutPanel',
+                            title: 'Information',
+                            contentContainer: 'InfoPanel',
+                            initContent: function () {
+                                // initConfigTable('system', 1, 1);
+                            }
+                        }, /*{
+                            type: 'layoutPanel',
+                            title: 'Values',
+                            contentContainer: 'ValuesPanel',
+                            initContent: function () {
+                                // initValuesTable();
+                                // initConfigTable('user', 1, 1);
+                            }
+                        },*/ {
+                            type: 'layoutPanel',
+                            title: 'Scenes',
+                            contentContainer: 'ScenesPanel',
+                            initContent: function () {
+                                //initProjectHistoryChart();
+                            }
+                        }]
+                    }]
+                }]
+            }];
+            // $('#jqxDockingLayout').jqxDockingLayout({ theme: 'ui-start', height: '100%', width: '100%', layout: layout, contextMenu: true });
+            $('#jqxDockingLayout').jqxLayout({ theme: 'ui-start', height: '100%', width: '100%', layout: layout, contextMenu: true });
+        });
+    </script>
 </head>
 <body>
-<div id="tabs-main">
-    <ul>
-        <li><a href="#devices"><span class="translate">Devices</span></a></li>
-        <!-- Not yet supported <li><a href="#events"><span class="translate">Events</span></a></li> -->
-    </ul>
-    <div id="devices">
-        <table id="grid-devices"></table>
-        <div id="pager-devices"></div>
+<input type="hidden" id="device_nodeid">
+<div id='jqxWidget'>
+    <div id='jqxMainMenu'>
+        <ul>
+            <li><a id="refresh" onClick="menuAction(this.id)">Refresh</a></li>
+            <li>Global
+                <ul style='width: 150px;'>
+                    <li><a id="refresh_device" onClick="menuAction(this.id)">Refresh Device</a></li>
+                    <li><a id="add_device" onClick="menuAction(this.id)">Add Device</a></li>
+                    <li><a id="remove_device" onClick="menuAction(this.id)">Remove Device</a></li>
+                    <li>Gateway
+                        <ul style='width: 180px;'>
+                            <li><a id="create_primary" onClick="menuAction(this.id)">Create Primary</a></li>
+                            <li><a id="transfer_primary" onClick="menuAction(this.id)">Transfer Primary Role</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li>Device
+                <ul style='width: 230px;'>
+                    <li><a id="receive_config" onClick="menuAction(this.id)">Receive Configuration</a></li>
+                    <li><a id="request_network_update" onClick="menuAction(this.id)">Request Network Update</a></li>
+                    <li><a id="request_node_neighbor_update" onClick="menuAction(this.id)">Request Node Neighbor Update</a></li>
+                    <li><a id="send_node_information" onClick="menuAction(this.id)">Send Node Information</a></li>
+                    <li><a id="replication_send" onClick="menuAction(this.id)">Replication Send</a></li>
+                </ul>
+            </li>
+            <li>Routes
+                <ul style='width: 190px;'>
+                    <li><a id="assign_return_route" onClick="menuAction(this.id)">Assign Return Route</a></li>
+                    <li><a id="delete_all_return_routes" onClick="menuAction(this.id)">Delete All Return Routes</a></li>
+                </ul>
+            </li>
+            <li>Administration
+                <ul style='width: 160px;'>
+                    <li><a id="has_node_failed" onClick="menuAction(this.id)">Has Node Failed</a></li>
+                    <li><a id="replace_failed_node" onClick="menuAction(this.id)">Replace Failed Node</a></li>
+                    <li><a id="remove_failed_node" onClick="menuAction(this.id)">Remove Failed Node</a></li>
+                </ul>
+            </li>
+            <li>Buttons
+                <ul style='width: 120px;'>
+                    <li><a id="add_button" onClick="menuAction(this.id)">Add Button</a></li>
+                    <li><a id="remove_button" onClick="menuAction(this.id)">Delete Button</a></li>
+                </ul>
+            </li>
+            <li>Help
+                <ul style='width: 120px;'>
+                    <li><a id="about" onClick="menuAction(this.id)">About</a></li>
+                    <li><a id="jqxwidgets" onClick="menuAction(this.id)">JQXWidgets</a></li>
+                </ul>
+            </li>
+        </ul>
     </div>
-    <!-- Not yet supported
-    <div id="events">
-        <div id="grid-events" class="ui-jqgrid" style="display: block;">
-            <div class="ui-jqgrid-titlebar ui-jqgrid-caption ui-widget-header ui-corner-top ui-helper-clearfix">
-                <div class="">
-                    <span class="ui-jqgrid-title">Events</span>
+
+    <!-- WARNING WINDOW -->
+    <div style="width: 100%; height: 650px; margin-top: 50px; display:none" id="warningContainer">
+        <div id="warning">
+            <div>Warning</div>
+            <div style="overflow: hidden;" id="warningContent">Do you really want to completely reset the interface?<br><br><br>
+                <div align="center"><input type="button" value="Reset" id='submit' />&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="Cancel" id='cancel' /></div>
+            </div>
+        </div>
+    </div>
+    <!-- WARNING WINDOW -->
+
+    <!-- ERROR WINDOW -->
+    <div style="width: 100%; height: 650px; margin-top: 50px; display:none" id="errorContainer">
+        <div id="error">
+            <div>Error</div>
+            <div style="overflow: hidden;" id="errorContent"><div id="dummy" style="text-align: center"></div><br><br><br>
+                <div align="center"><input type="button" value="Close" id='close'/></div>
+            </div>
+        </div>
+    </div>
+    <!-- WARNING WINDOW -->
+
+    <!-- ABOUT WINDOW -->
+    <div style="width: 100%; height: 650px; margin-top: 50px; display:none" id="aboutContainer">
+        <div id="window">
+            <div>About / License</div>
+            <div style="overflow: hidden;" id="windowContent">
+                <div data-lang="About" style="text-align: center; width: auto; min-height: 0px; max-height: none; height: 425px;" id="dialog_about" class="translateT ui-dialog-content ui-widget-content">
+                    <ul style="font-size: 1.1em; line-height: 2em; display: inline;">
+                        <li><a data-lang="Web" href="http://ioBroker.net/" target="_blank" class="translate">Web</a></li>
+                        <li><a data-lang="Community" href="http://forum.iobroker.net" target="_blank" class="translate">Community</a></li>
+                        <li><a data-lang="Change log" href="https://github.com/husky-koglhof/ioBroker.zwave/blob/master/README.md" target="_blank" class="translate">Änderungen</a></li>
+                    </ul>
+                    <h4>Copyright (c) 2014-2016 <br>bluefox <a href="mailto:dogafox@gmail.com">dogafox@gmail.com</a>, husky-koglhof <a href="mailto:husky.koglhof@icloud.com">husky.koglhof@icloud.com</a></h4>
+                    <p data-lang="LGPLv3" class="translate">LGPLv3</p><a href="http://www.gnu.org/licenses/lgpl-3.0.en.html"><img src="images/heckert_gnu.small.png" height="42" width="42"></a>
+
+<pre>SOFTWARE NOTICE AND LICENSE
+
+OpenZWave is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+OpenZWave is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with OpenZWave.  If not, see <a href="http://www.gnu.org/licenses/" target="_blank">http://www.gnu.org/licenses/</a>.
+</pre>
                 </div>
             </div>
-            <table style="width: 100%; border-collapse: collapse;" class="ui-widget ui-state-default ui-corner-bottom">
-                <thead>
-                <tr class="ui-jqgrid-labels ui-jqgrid-view ui-jqgrid-htable">
-                    <th class="event-column-1 ui-state-default ui-th-column ui-th-ltr">Timestamp</th>
-                    <th class="event-column-2 ui-state-default ui-th-column ui-th-ltr">Name</th>
-                    <th class="event-column-3 ui-state-default ui-th-column ui-th-ltr">ADDRESS</th>
-                    <th class="event-column-4 ui-state-default ui-th-column ui-th-ltr">PARAM</th>
-                    <th class="event-column-5 ui-state-default ui-th-column ui-th-ltr">VALUE</th>
+        </div>
+    </div>
+    <!-- ABOUT MENU -->
+</div>
+
+<div id="jqxDockingLayout">
+    <div data-container="TeamsPanel">
+        <div id="teamsDataTable" class="no-border"></div>
+    </div>
+    <div data-container="ControllerPanel">
+        <table border="0">
+            <col width='200'><col width='280'><col width='200'><col width='280'>
+            <tr><td>Home Id</td><td><div id="controller_id"/></td><td>Device Name</td><td><div id="controller_devicename"/></td></tr>
+            <tr><td>SUC NodeID</td><td><div id="controller_suc_nodeid"/></td><td>Controller NodeID</td><td><div id="controller_nodeid"/></td></tr>
+            <tr><td>&nbsp;</td></tr>
+
+            <tr><td>Primary Controller</td><td><div id="controller_primary"/></td><td>Static Controller</td><td><div id="controller_static"/></td></tr>
+            <tr><td>Bridge Controller</td><td><div id="controller_bridge"/></td></tr>
+            <tr><td>&nbsp;</td></tr>
+            <tr><td>Library Version</td><td><div id="controller_version"/></td><td>Library Type Name</td><td><div id="controller_type"/></td></tr>
+            <tr><td>Send Queue Count</td><td><div id="controller_sqc"/></td></tr>
+            <tr><td>&nbsp;</td></tr>
+            <tr><td colspan="4" align="center"><input type="button" value="Reset" id='controller_reset' />&nbsp;<input type="button" value="Soft Reset" id='controller_softreset' /></td></tr>
+        </table>
+    </div>
+    <div data-container="ProjectsTimelinePanel">
+        <div id="projectsTimelineDiv" style="margin: 5px 0 0 5px;">
+        </div>
+    </div>
+    <div data-container="GlobalPanel">
+        <table>
+            <col width='200'><col width='280'>
+            <tr><td>&nbsp;</td></tr>
+            <tr><td>Generic Type</td>   <td><div id="device_generictype"/></td></tr>
+            <tr><td>Product</td>        <td><div id="device_product"/></td></tr>
+            <!--
+            <tr><td><b>Static Values</b></td></tr>
+            <tr><td>Value</td>          <td><div id="device_value"/></td></tr>
+            <tr><td>Last Heard</td>     <td><div id="device_lastheard"/></td></tr>
+            <tr><td>Status</td>         <td><div id="device_status"/></td></tr>
+            -->
+            <tr><td>&nbsp;</td></tr>
+            <tr><td>Name</td>           <td><input type="text" id="device_name"/></td></tr>
+            <tr><td>Location</td>       <td><input type="text" id="device_location"/></td></tr>
+            <tr><td></td>               <td><input type="button" value="Submit" id='device_naming_submit' /></td></tr>
+        </table>
+        <div id="globalTable" class="no-border" style="margin-left: 5px; margin: 20px;"></div>
+    </div>
+    <div data-container="ConfigPanel">
+        <div id="configTable" class="no-border" style="margin-left: 5px; margin: 20px;"></div>
+    </div>
+    <div data-container="InfoPanel">
+        <div id="infoTable" class="no-border" style="margin-left: 5px; margin: 20px;"></div>
+    </div>
+
+    <div data-container="TopologyPanel">
+        <div id="topologyTable" class="no-border" style="margin-left: 5px; margin: 20px;"></div>
+    </div>
+    <div data-container="StatisticsPanel">
+        <div id="statnode" style="float: left; margin-left: 5px; width: 100%; display: block;">
+            <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
+                <thead id="statnodehead">
+                <tr>
+                    <th style="text-align: center;">Node</th>
+                    <th style="text-align: center;">Sent</th>
+                    <th style="text-align: center;">Failed</th>
+                    <th style="text-align: center;">Retries</th>
+                    <th style="text-align: center;">Received</th>
+                    <th style="text-align: center;">Unsolicited</th>
+                    <th style="text-align: center;">Duplicates</th>
+                    <th style="text-align: center;">Last Sent</th>
+                    <th style="text-align: center;">Last Received</th>
+                    <th style="text-align: center;">Last Request RTT</th>
+                    <th style="text-align: center;">Average Request RTT</th>
+                    <th style="text-align: center;">Last Response RTT</th>
+                    <th style="text-align: center;">Average Response RTT</th>
+                    <th style="text-align: center;">Quality</th>
                 </tr>
                 </thead>
+                <tbody id="statnodebody" style="cursor: help;">
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                </tbody>
             </table>
-            <div id="grid-events-inner" style="width: 100%; overflow-y: scroll;">
-                <table style="width: 100%; border-collapse: collapse; margin-top: -1px" class="ui-widget ui-state-default ui-corner-bottom">
-                    <tbody id="event-table">
+        </div>
 
+    </div>
+    <div data-container="TestHealPanel">
+        <div id="thcntl" name="thcntl" class="rsb" style="display: block; margin-right: 5px;">
+
+            <div class="rsb" style="margin-left: 5px;">
+                <br>
+                <table border="0">
+                    <col width="150">
+                    <col width="150">
+                    <tr>
+                        <td>Node:</td>
+                        <td><div id='testnode'></div></td>
+                    </tr>
+                    <tr>
+                        <td><label><span class="legend" style="font-size: 12px;">Message count:</span></label></td>
+                        <td><input id="testmcnt" type="text" size="5" class="legend"></td>
+                    </tr>
+                    <tr>
+                        <td>Heal Return Routes:</td>
+                        <td><input id="healrrs" type="checkbox" value="healrr"></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><input type="button" value="Test" id='testbutton'/></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <br><br><div id="testhealreport" style="float: left; margin-left: 5px; width: 98%; text-align: left; "></div>
+    </div>
+
+    <div data-container="ScenesPanel">
+        <div id="scencntl" name="scencntl" class="rsb" style="display: block; margin-right: 10px;">
+            <div class="rsb" style="margin-left: 40px;"><br><br><br>
+                <table border="1">
+                    <tbody>
+                    <col width="200px">
+                    <col width="220px">
+                        <tr>
+                            <td align="center">
+                                <input type="button" value="Add" id='scenecreate'/><br><br>
+                                <input type="button" value="Delete" id='scenedelete'/><br><br>
+                                <input type="button" value="Execute" id='sceneexecute'/><br><br>
+                            </td>
+                            <td style="align:center; width: 250px;">
+                                <label><span class="legend" style="font-size: 12px;">Scene IDs</span></label><br>
+                                <input type="hidden" id="scenecount">
+                                <div id='sceneids'></div>
+                                <label><span class="legend" style="font-size: 12px;">Label:</span></label>
+                                <input type="text" id="scenelabeltext"/>
+                                <input type="button" value="Update Name" id='updatescenelabel'/>
+                            </td>
+                        </tr>
+                    </tbody>
+                    </table>
+                <table border="1">
+                    <col width="180px">
+                    <col width="100px">
+                    <col width="180px">
+                    <tbody>
+                        <tr>
+                            <td style="align:center">
+                                <label><span class="legend" style="font-size: 12px;">Values</span></label><br>
+                                <div id='scenevalues'></div>
+                                <label><span class="legend" style="font-size: 12px;"></span></label>
+                                <input type="text" id="scenevaluetext1"/><br>
+                                <label><span class="legend" style="font-size: 12px;" id="valueunits"></span></label>
+                            </td>
+                            <td style="align:center">
+                                <input type="button" value="Add -&gt;" id='savescenevalue'/><br>
+                                <input type="button" value="&lt;- Remove" id='removescenevalue'/>
+                            </td>
+                            <td style="align:center">
+                                <label><span class="legend" style="font-size: 12px; vertical-align: top;">Scene Values</span></label><br>
+                                <div id='scenescenevalues'></div>
+                                <input type="text" id="scenevaluetext2"/>
+                                <label><span class="legend" style="font-size: 12px;" id="scenevalueunits"></span></label>
+                                <input type="button" value="Activate Scene" id='updatescenevalue'/>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    -->
-    <div id="dialog-setname" class="translateT" title="Set Name"><span class=translate >Name:</span>
-        <input type="text" id="rename-name" value="" size="40"/>
-        <input type="hidden" id="rename-address" value=""/>
-        <input type="hidden" id="rename-rowid" value=""/>
-        <input type="hidden" id="rename-gridid" value=""/>
-    </div>
+    <div data-container="ValuesPanel">
+        &nbsp;Static Values
 
-
-    <div id="dialog-setlocation" class="translateT" title="Set Location"><span class=translate >Location:</span>
-        <input type="text" id="rename-loc" value="" size="40"/>
-        <input type="hidden" id="rename-address" value=""/>
-        <input type="hidden" id="rename-rowid" value=""/>
-        <input type="hidden" id="rename-gridid" value=""/>
+        <div id="valuesTable" class="no-border" style="margin-left: 5px; margin: 20px;"></div>
     </div>
-
-    <div id="dialog-paramsetValues" class="translateT" title="Change Parameter(s)">
-        <input type="hidden" id="nodeid" value=""/>
-        <input type="hidden" id="label" value=""/>
-        <input type="hidden" id="address" value=""/>
-        <input type="hidden" id="index" value=""/>
-        <input type="hidden" id="genre" value=""/>
-        <input type="hidden" id="comclass" value=""/>
-        <input type="hidden" id="name" value=""/>
-        <table>
-            <!-- TODO: Implement Help Function
-            <tr>
-                <td><span class="translate">Help:</span></td><td><input type="textarea" id="help" value="" readonly/></td>
-            </tr>
-            -->
-            <tr>
-                <td><span class=translate >Value:</span></td><td><input type="text" id="input-value" value=""/></td>
-            </tr>
-        </table>
-    </div>
-
-    <div id="dialog-add-countdown" title="Countdown">
-        <br/><br/>
-        <h3 style="width: 100%; text-align: center;">Zeit verbleibend: <span id="add-countdown"></span>s</h3>
-    </div>
-    <div id="dialog-help" class="translateT" title="About OpenZwave Configurator">
-        <h3>Version <span class="version"></span></h3>
-        <a href="https://github.com/ioBroker/ioBroker.zwave" target="_blank">GitHub</a>
-        <h3>Lizenz</h3>
-        <p><b>Copyright &copy; 2014, 2015 bluefox, husky-koglhof</b></p>
-        <p><span class="translate">The above copyright notice must be enclosed in all copies or substantial portions of the Software.</span></p>
-        <p style="font-size: 10px;">
-            SOFTWARE NOTICE AND LICENSE
-            OpenZWave is free software: you can redistribute it and/or modify it under the terms of the
-            GNU Lesser General Public License as published by the Free Software Foundation, either
-            version 3 of the License, or (at your option) any later version.<br><br>
-            OpenZWave is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-            without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-            See the GNU Lesser General Public License for more details.<br><br>
-            You should have received a copy of the GNU Lesser General Public License along with OpenZWave.
-            If not, see http://www.gnu.org/licenses/.
-        </p>
-    </div>
+</div>
 </body>
 </html>

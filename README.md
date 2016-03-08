@@ -62,30 +62,20 @@ If you have installed iobroker into default Folder:<br>
  - Configuration: /opt/iobroker/node_modules/iobroker.zwave/node_modules/zwcfg_<HOMEID>.xml on linux<br>
 
 ## Device add or remove
-If you add or remove a device, it takes 60 seconds. Then the page is automatically reloaded.<br>
-If you change the Name or Location, it takes 5 seconds. Then the page is automatically reloaded.
+Supported via new Configuration Site
 
 ## Features
 Within OpenZWave Configurator you can see all Nodes and their classes.
+All needed Actions are implemented via the new Configuration Site
 
-Following Actions are current supported (only with Contextmenu):<br>
-- Set Name and Set Location for Node itself<br>
-- Change Value of a class<br>
-
-Following global Actions are current supported:<br>
-- Add Nodes<br>
-- Remove Nodes<br>
-- Refresh Nodes (Refresh Nodes from ioBroker Communication)<br>
+## Scenes
+Currently disabled via new Configuration Site
 
 ## Todo
 ### ZWave Specific
 - Scenes
-- Group Management
-- Reset (Soft/Hard)
-- Network Commands (Heal, getNeighbors, refreshNode)
-- Polling
-- Controller Commands
-- Configuration Commands
+- Testing all Actions
+
 ### Global
 - Test more Hardware
 - Move config and logfile into iobroker default path (/opt/iobroker/log, /opt/iobroker/data/files/zwave)
@@ -105,7 +95,19 @@ Following global Actions are current supported:<br>
 - Danfoss Living Connect Room Thermostat (type 0003, id 8010)
 - Danfoss Z Thermostat 014G0013
 
+### DUWI / Popp
+- Static Controller (type=5003 id=0000), tested only as Network Extender / Repeater
+
+### Aeotec
+- Multisensor 6
+- Smart Switch 6
+
+
 ## Changelog 
+### 0.2.9 (2016-03-08)
+ - (husky-koglhof) reimplemented Configuration Site
+   Bugfixing (state change)
+   
 ### 0.2.8 (2016-01-29)
  - (husky-koglhof) fixed renaming of objects if state change
  
