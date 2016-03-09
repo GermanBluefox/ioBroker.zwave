@@ -19,7 +19,6 @@
     </style>
 
     <script type="text/javascript">
-        changed = false;
         systemDictionary = {
             "OpenZWave adapter settings": {
                 "en": "OpenZWave adapter settings",
@@ -67,21 +66,19 @@
                 "ru": "подавить обновление"
             }
         };
+        var onChange;
 
         function setValue(id, value) {
             // example: select elements with id=key and class=value and insert value
             if ($('#' + id + '.value').attr('type') == 'checkbox') {
                 $('#' + id + '.value').prop('checked', value).change(function() {
-                    changed = true;
-                    $('#save').button("enable");
+                    onChange();
                 });
             } else {
                 $('#' + id + '.value').val(value).change(function() {
-                    changed = true;
-                    $('#save').button("enable");
+                    onChange();
                 }).keyup(function() {
-                    changed = true;
-                    $('#save').button("enable");
+                    onChange();
                 });
             }
         }
@@ -117,10 +114,9 @@
         }
 
         // the function loadSettings has to exist ...
-        function load(settings) {
+        function load(settings, _onChange) {
             loadHelper(settings);
             $('#pass_confirm').val($('#pass').val());
-            $('#save').button("disable");
 
             sendToHost(null, 'getDevList', null, function (res) {
                 var availableTags = [' '];
@@ -135,6 +131,8 @@
                     source: availableTags
                 });
             });
+            onChange = _onChange;
+            onChange(false);
         }
 
         function saveHelper(obj, id, value) {
@@ -167,13 +165,21 @@
             });
             return obj;
         }
+        function formatKey(key) {
+            var parts = key.trim().toLowerCase().split(/[\s,]+/);
+            for (var p = 0; p < parts.length; p++) {
+                parts[p] = parts[p].trim();
+                if (parts[p][0] != '0' && parts[p][1] != 'x') parts[p] = '0x' + parts[p];
+            }
+            return parts.join(',');
+        }
 
         // ... and the function save has to exist.
         // you have to make sure the callback is called with the settings object as first param!
         function save(callback) {
-            changed = false;
+            $('#NetworkKey').val(formatKey($('#NetworkKey').val()));
+            
             callback(getSettings());
-            $('#save').button("disable");
         }
 
     </script>
